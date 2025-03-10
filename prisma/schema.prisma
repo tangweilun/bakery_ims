@@ -14,10 +14,359 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+//erd generator
+generator erd {
+  provider = "prisma-erd-generator"
+ output = "/ERD.svg" // Path where the ERD will be saved
+  format   = "png" // Can be "svg" or "png"
+}
 
-model User{
-  id Int @id @default(autoincrement())
-  email String @unique
-  name String?
-  createdAt DateTime @default(now())
+
+// Core models for the bakery inventory system
+
+model Ingredient {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  description       String?
+  category          String              // e.g. "Dry Goods", "Dairy", "Spices", etc.
+  unit              String              // e.g. "kg", "liters", "pieces", etc.
+  currentStock      Float               // Current quantity in stock
+  minimumStock      Float               // Threshold for low-stock alerts
+  idealStock        Float               // Optimal stock level
+  cost              Float               // Cost per unit
+  supplier          Supplier?           @relation(fields: [supplierId], references: [id])
+  supplierId        Int?
+  
+  // Relations
+  batches           Batch[]
+  restockHistory    RestockHistory[]
+  usageRecords      UsageRecord[]
+  recipeIngredients RecipeIngredient[]
+  lowStockAlerts    LowStockAlert[]
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model Supplier {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  contactPerson     String?
+  email             String?
+  phone             String?
+  address           String?
+  notes             String?
+  
+  // Relations
+  ingredients       Ingredient[]
+  restockHistory    RestockHistory[]
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model Recipe {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  description       String?
+  category          String              // e.g. "Bread", "Pastry", "Cake", etc.
+  preparationTime   Int?                // In minutes
+  bakingTime        Int?                // In minutes
+  yieldQuantity     Int                 // How many items this recipe produces
+  instructions      String?             // Preparation instructions
+  sellingPrice      Float               // Retail price per item
+  
+  // Relations
+  recipeIngredients RecipeIngredient[]
+  productionRecords ProductionRecord[]
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model RecipeIngredient {
+  id                Int                 @id @default(autoincrement())
+  recipe            Recipe              @relation(fields: [recipeId], references: [id])
+  recipeId          Int
+  ingredient        Ingredient          @relation(fields: [ingredientId], references: [id])
+  ingredientId      Int
+  quantity          Float               // Amount of ingredient needed per recipe
+  
+  // Composite unique constraint to prevent duplicate entries
+  @@unique([recipeId, ingredientId])
+}
+
+model Batch {
+  id                Int                 @id @default(autoincrement())
+  batchNumber       String              @unique
+  ingredient        Ingredient          @relation(fields: [ingredientId], references: [id])
+  ingredientId      Int
+  quantity          Float               // Initial quantity in this batch
+  remainingQuantity Float               // Current remaining quantity
+  cost              Float               // Cost of this specific batch
+  expiryDate        DateTime?
+  receivedDate      DateTime            @default(now())
+  location          String?             // Storage location
+  notes             String?
+  
+  // Relations
+  restockHistory    RestockHistory?     @relation(fields: [restockHistoryId], references: [id])
+  restockHistoryId  Int?                @unique // One-to-one relationship
+  batchUsages       BatchUsage[]
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model BatchUsage {
+  id                Int                 @id @default(autoincrement())
+  batch             Batch               @relation(fields: [batchId], references: [id])
+  batchId           Int
+  usageRecord       UsageRecord         @relation(fields: [usageRecordId], references: [id])
+  usageRecordId     Int
+  quantityUsed      Float
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  @@unique([batchId, usageRecordId])
+}
+
+model ProductionRecord {
+  id                Int                 @id @default(autoincrement())
+  recipe            Recipe              @relation(fields: [recipeId], references: [id])
+  recipeId          Int
+  quantity          Int                 // Number of items produced from recipe
+  batchNumber       String              // Production batch identifier
+  status            ProductionStatus    @default(PLANNED)
+  notes             String?
+  user              User                @relation(fields: [userId], references: [id])
+  userId            Int
+  
+  // This will automatically deduct ingredients from inventory
+  usageRecords      UsageRecord[]
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+enum ProductionStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model RestockHistory {
+  id                Int                 @id @default(autoincrement())
+  ingredient        Ingredient          @relation(fields: [ingredientId], references: [id])
+  ingredientId      Int
+  supplier          Supplier?           @relation(fields: [supplierId], references: [id])
+  supplierId        Int?
+  quantity          Float               // Quantity restocked
+  cost              Float               // Total cost of restock
+  invoiceNumber     String?
+  notes             String?
+  user              User                @relation(fields: [userId], references: [id])
+  userId            Int
+  
+  // Relation to Batch
+  batch             Batch?              // One-to-one relation
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model UsageRecord {
+  id                Int                 @id @default(autoincrement())
+  ingredient        Ingredient          @relation(fields: [ingredientId], references: [id])
+  ingredientId      Int
+  quantity          Float               // Quantity used
+  reason            String              // e.g. "Production", "Spoilage", "Testing", etc.
+  notes             String?
+  productionRecord  ProductionRecord?   @relation(fields: [productionRecordId], references: [id])
+  productionRecordId Int?
+  user              User                @relation(fields: [userId], references: [id])
+  userId            Int
+  
+  // Relation to BatchUsage
+  batchUsages       BatchUsage[]        // Which batches were used for this usage record
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model LowStockAlert {
+  id                Int                 @id @default(autoincrement())
+  ingredient        Ingredient          @relation(fields: [ingredientId], references: [id])
+  ingredientId      Int
+  threshold         Float               // The threshold that triggered the alert
+  currentLevel      Float               // Stock level at time of alert
+  status            AlertStatus         @default(PENDING)
+  notes             String?
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+enum AlertStatus {
+  PENDING
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+model DemandForecast {
+  id                Int                 @id @default(autoincrement())
+  ingredientId      Int?                // Optional, for ingredient-specific forecasts
+  recipeId          Int?                // Optional, for recipe-specific forecasts
+  startDate         DateTime
+  endDate           DateTime
+  forecastQuantity  Float
+  confidenceLevel   Float?              // Optional, percentage of confidence
+  factors           String?             // JSON string of factors considered
+  notes             String?
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model InventoryReport {
+  id                Int                 @id @default(autoincrement())
+  reportType        String              // e.g. "Daily", "Weekly", "Monthly", "Custom"
+  startDate         DateTime
+  endDate           DateTime
+  reportData        String              // JSON string with report data
+  notes             String?
+  user              User                @relation(fields: [userId], references: [id])
+  userId            Int
+  activities        Activity[]          // Link to activity log
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  email             String              @unique
+  name              String?
+  role              UserRole            @default(STAFF)
+  passwordHash      String
+  
+  // Relations
+  productionRecords ProductionRecord[]
+  restockHistory    RestockHistory[]
+  usageRecords      UsageRecord[]
+  inventoryReports  InventoryReport[]
+  activities        Activity[]          // Activities performed by this user
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+enum UserRole {
+  MANAGER
+  STAFF
+}
+
+// New Activity Log model to track all actions in the system
+model Activity {
+  id                Int                 @id @default(autoincrement())
+  action            ActivityAction      // Type of action performed
+  description       String              // Human-readable description (e.g., "Jane added 40 kg of Flour")
+  details           String?             // Additional JSON details about the action if needed
+  
+  // Relations to relevant entities (optional depending on action type)
+  user              User                @relation(fields: [userId], references: [id])
+  userId            Int                 // Who performed the action
+  
+  // Optional relations to affected entities
+  ingredientId      Int?                // If action involved an ingredient
+  ingredient        Ingredient?         @relation(fields: [ingredientId], references: [id])
+  
+  supplierId        Int?                // If action involved a supplier
+  supplier          Supplier?           @relation(fields: [supplierId], references: [id])
+  
+  recipeId          Int?                // If action involved a recipe
+  recipe            Recipe?             @relation(fields: [recipeId], references: [id])
+  
+  batchId           Int?                // If action involved a batch
+  batch             Batch?              @relation(fields: [batchId], references: [id])
+  
+  productionRecordId Int?               // If action involved production
+  productionRecord  ProductionRecord?   @relation(fields: [productionRecordId], references: [id])
+  
+  restockHistoryId  Int?                // If action involved restocking
+  restockHistory    RestockHistory?     @relation(fields: [restockHistoryId], references: [id])
+  
+  usageRecordId     Int?                // If action involved usage
+  usageRecord       UsageRecord?        @relation(fields: [usageRecordId], references: [id])
+  
+  lowStockAlertId   Int?                // If action involved an alert
+  lowStockAlert     LowStockAlert?      @relation(fields: [lowStockAlertId], references: [id])
+  
+  inventoryReportId Int?                // If action involved a report
+  inventoryReport   InventoryReport?    @relation(fields: [inventoryReportId], references: [id])
+  
+  // Timestamp
+  createdAt         DateTime            @default(now())
+}
+
+enum ActivityAction {
+  INGREDIENT_ADDED
+  INGREDIENT_UPDATED
+  INGREDIENT_DELETED
+  
+  RECIPE_CREATED
+  RECIPE_UPDATED
+  RECIPE_DELETED
+  
+  PRODUCTION_PLANNED
+  PRODUCTION_STARTED
+  PRODUCTION_COMPLETED
+  PRODUCTION_CANCELLED
+  
+  INGREDIENT_RESTOCKED
+  INGREDIENT_USED
+  
+  BATCH_CREATED
+  BATCH_UPDATED
+  BATCH_EXPIRED
+  BATCH_DEPLETED
+  
+  ALERT_GENERATED
+  ALERT_ACKNOWLEDGED
+  ALERT_RESOLVED
+  
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_LOGIN
+  USER_LOGOUT
+  
+  REPORT_GENERATED
+  
+  SYSTEM_BACKUP
+  SYSTEM_RESTORE
+  SYSTEM_ERROR
 }

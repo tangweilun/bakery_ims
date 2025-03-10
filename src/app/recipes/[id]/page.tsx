@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Users, ChevronLeft, Printer } from "lucide-react";
 import Link from "next/link";
 
-// Define types for type safety
+// Define TypeScript interfaces for type safety
 interface Ingredient {
   id: string;
   name: string;
@@ -47,6 +47,12 @@ interface Recipe {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface AlertType {
+  title: string;
+  description: string;
+  variant: "default" | "destructive";
 }
 
 // Mock data for demonstration
@@ -90,11 +96,7 @@ export default function RecipeDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [alert, setAlert] = useState<{
-    title: string;
-    description: string;
-    variant: "default" | "destructive";
-  } | null>(null);
+  const [alert, setAlert] = useState<AlertType | null>(null);
 
   useEffect(() => {
     // In a real app, this would be an API call

@@ -32,7 +32,7 @@ function Model({ scroll }: { scroll: number }) {
   return (
     <primitive
       object={scene}
-      scale={[0.1, 0.1, 0.1]}
+      scale={[0.13, 0.13, 0.13]}
       rotation={[0, scroll * Math.PI * 2, 0]}
     />
   );
@@ -64,18 +64,6 @@ export default function LandingPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
-              <motion.span
-                className="text-white"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Number.POSITIVE_INFINITY, duration: 2 }}
-              >
-                ▶
-              </motion.span>
-            </div>
-            <span className="text-gray-600">Demo Video</span>
-          </div>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-4">
             Smart Bakery
             <br />
@@ -89,12 +77,6 @@ export default function LandingPage() {
           <div className="flex gap-4">
             <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
               Get Started
-            </Button>
-            <Button
-              variant="outline"
-              className="border-indigo-600 text-indigo-600 hover:bg-indigo-50"
-            >
-              Book a Demo
             </Button>
           </div>
         </motion.div>
@@ -141,7 +123,10 @@ export default function LandingPage() {
               icon: <ClipboardList className="w-8 h-8" />,
               name: "Recipe Management",
             },
-            { icon: <PieChart className="w-8 h-8" />, name: "Cost Analysis" },
+            {
+              icon: <PieChart className="w-8 h-8" />,
+              name: "Demand Prediction",
+            },
           ].map((feature, index) => (
             <motion.div
               key={feature.name}
@@ -186,9 +171,6 @@ export default function LandingPage() {
             you reduce waste, optimize ordering, and focus on what you do best:
             creating delicious baked goods.
           </p>
-          <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
-            Our Story
-          </Button>
         </motion.div>
       </section>
 
