@@ -1,19 +1,32 @@
-import type { Metadata } from "next"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { MainNav } from "@/components/main-nav"
-import { UserNav } from "@/components/user-nav"
-import { Search } from "@/components/search"
-import Link from "next/link"
-import { PlusCircle, Filter, ArrowUpDown } from "lucide-react"
+import type { Metadata } from "next";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { MainNav } from "@/components/main-nav";
+import { UserNav } from "@/components/user-nav";
+import { Search } from "@/components/search";
+import Link from "next/link";
+import { PlusCircle, Filter, ArrowUpDown } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Batch Tracking",
   description: "Track batches and lots of ingredients",
-}
+};
 
 export default function BatchesPage() {
   return (
@@ -22,7 +35,6 @@ export default function BatchesPage() {
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
-            <Search />
             <UserNav />
           </div>
         </div>
@@ -56,7 +68,11 @@ export default function BatchesPage() {
             <Filter className="h-4 w-4" />
             <span className="ml-2 hidden lg:inline">Filter</span>
           </Button>
-          <Button variant="outline" size="sm" className="ml-auto h-9 px-2 lg:px-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto h-9 px-2 lg:px-3"
+          >
             <ArrowUpDown className="h-4 w-4" />
             <span className="ml-2 hidden lg:inline">Sort</span>
           </Button>
@@ -161,6 +177,5 @@ export default function BatchesPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

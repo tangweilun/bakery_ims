@@ -1,20 +1,45 @@
-import type { Metadata } from "next"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { MainNav } from "@/components/main-nav"
-import { UserNav } from "@/components/user-nav"
-import { Search } from "@/components/search"
-import Link from "next/link"
-import { PlusCircle, Filter, ArrowUpDown, ShoppingCart, Plus, Eye } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { Metadata } from "next";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { MainNav } from "@/components/main-nav";
+import { UserNav } from "@/components/user-nav";
+import { Search } from "@/components/search";
+import Link from "next/link";
+import {
+  PlusCircle,
+  Filter,
+  ArrowUpDown,
+  ShoppingCart,
+  Plus,
+  Eye,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const metadata: Metadata = {
   title: "Inventory Management",
   description: "Manage your bakery ingredients inventory",
-}
+};
 
 // Mock data for demonstration
 const ingredientsData = [
@@ -68,7 +93,7 @@ const ingredientsData = [
     batchLot: "LOT-M97531",
     status: "Expiring Soon",
   },
-]
+];
 
 export default function InventoryPage() {
   return (
@@ -77,7 +102,6 @@ export default function InventoryPage() {
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
-            <Search />
             <UserNav />
           </div>
         </div>
@@ -98,7 +122,12 @@ export default function InventoryPage() {
                     fill="none"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 8l4 4 4-4" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M6 8l4 4 4-4"
+                    />
                   </svg>
                 </Button>
               </DropdownMenuTrigger>
@@ -110,7 +139,10 @@ export default function InventoryPage() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href="/inventory/purchase" className="flex items-center">
+                  <Link
+                    href="/inventory/purchase"
+                    className="flex items-center"
+                  >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Purchase Existing
                   </Link>
@@ -137,7 +169,11 @@ export default function InventoryPage() {
             <Filter className="h-4 w-4" />
             <span className="ml-2 hidden lg:inline">Filter</span>
           </Button>
-          <Button variant="outline" size="sm" className="ml-auto h-9 px-2 lg:px-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto h-9 px-2 lg:px-3"
+          >
             <ArrowUpDown className="h-4 w-4" />
             <span className="ml-2 hidden lg:inline">Sort</span>
           </Button>
@@ -160,14 +196,22 @@ export default function InventoryPage() {
             <TableBody>
               {ingredientsData.map((ingredient) => (
                 <TableRow key={ingredient.id}>
-                  <TableCell className="font-medium">{ingredient.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {ingredient.name}
+                  </TableCell>
                   <TableCell>{ingredient.category}</TableCell>
                   <TableCell>{ingredient.quantity}</TableCell>
                   <TableCell>{ingredient.unit}</TableCell>
                   <TableCell>{ingredient.expirationDate}</TableCell>
                   <TableCell>{ingredient.batchLot}</TableCell>
                   <TableCell>
-                    <Badge variant={ingredient.status === "In Stock" ? "outline" : "destructive"}>
+                    <Badge
+                      variant={
+                        ingredient.status === "In Stock"
+                          ? "outline"
+                          : "destructive"
+                      }
+                    >
                       {ingredient.status}
                     </Badge>
                   </TableCell>
@@ -183,25 +227,39 @@ export default function InventoryPage() {
                             fill="none"
                             stroke="currentColor"
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 8l4 4 4-4" />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="1.5"
+                              d="M6 8l4 4 4-4"
+                            />
                           </svg>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>
-                          <Link href={`/inventory/${ingredient.id}`} className="flex items-center">
+                          <Link
+                            href={`/inventory/${ingredient.id}`}
+                            className="flex items-center"
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
-                          <Link href={`/inventory/purchase?id=${ingredient.id}`} className="flex items-center">
+                          <Link
+                            href={`/inventory/purchase?id=${ingredient.id}`}
+                            className="flex items-center"
+                          >
                             <ShoppingCart className="mr-2 h-4 w-4" />
                             Purchase More
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem>
-                          <Link href={`/inventory/edit/${ingredient.id}`} className="flex items-center">
+                          <Link
+                            href={`/inventory/edit/${ingredient.id}`}
+                            className="flex items-center"
+                          >
                             Edit
                           </Link>
                         </DropdownMenuItem>
@@ -215,6 +273,5 @@ export default function InventoryPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
