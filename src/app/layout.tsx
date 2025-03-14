@@ -6,8 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import Providers from "@/lib/provider";
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
+  title: "BakeryTrack",
+  description: "Smart Bakery Inventory System",
   generator: "v0.dev",
 };
 

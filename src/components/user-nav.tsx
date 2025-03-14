@@ -94,7 +94,7 @@ export function UserNav() {
         .single();
 
       if (error && error.code !== "PGRST116") {
-        console.error("Error fetching profile:", error);
+        console.log("Error fetching profile:", error);
       }
 
       setUser({

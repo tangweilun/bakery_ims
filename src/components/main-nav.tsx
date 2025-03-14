@@ -49,6 +49,7 @@ export function MainNav({
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/inventory", label: "Inventory" },
+    { href: "/suppliers", label: "Supplier" },
     { href: "/recipes", label: "Recipes" },
     { href: "/batches", label: "Batch Tracking" },
     { href: "/yield", label: "Yield Management" },
