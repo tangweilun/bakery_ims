@@ -95,7 +95,7 @@ const ingredientsData = [
   },
 ];
 
-export default function InventoryPage() {
+export default function IngredientPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <div className="border-b">
@@ -108,7 +108,7 @@ export default function InventoryPage() {
       </div>
       <div className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Inventory</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Ingredient</h2>
           <div className="flex items-center space-x-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

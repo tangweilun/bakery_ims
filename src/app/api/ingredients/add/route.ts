@@ -1,8 +1,9 @@
-// app/api/inventory/ingredients/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@/utils/supabase/server";
 
+// Create a single PrismaClient instance and reuse it across requests
+// This prevents connection pool exhaustion in serverless environments
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
@@ -52,110 +53,117 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new ingredient
-    const ingredient = await prisma.ingredient.create({
-      data: {
-        name: data.name,
-        description: data.description || null,
-        category: data.category,
-        unit: data.unit,
-        currentStock: parseFloat(data.currentStock),
-        minimumStock: parseFloat(data.minimumStock || 0),
-        idealStock: parseFloat(data.idealStock || 0),
-        cost: parseFloat(data.cost),
-        supplierId: data.supplierId || null,
-      },
-    });
-
-    // Create activity log entry
-    await prisma.activity.create({
-      data: {
-        action: "INGREDIENT_ADDED",
-        description: `${dbUser.name || dbUser.email} added new ingredient: ${
-          data.name
-        }`,
-        details: JSON.stringify(ingredient),
-        userId: dbUser.id,
-        ingredientId: ingredient.id,
-      },
-    });
-
-    // If initial stock is provided, also create a batch
-    if (data.currentStock > 0) {
-      const batch = await prisma.batch.create({
+    // Use a transaction to ensure all database operations succeed or fail together
+    const result = await prisma.$transaction(async (tx) => {
+      // Create new ingredient
+      const ingredient = await tx.ingredient.create({
         data: {
-          batchNumber: `INIT-${ingredient.id}-${Date.now()}`,
-          ingredientId: ingredient.id,
-          quantity: parseFloat(data.currentStock),
-          remainingQuantity: parseFloat(data.currentStock),
-          cost: parseFloat(data.cost) * parseFloat(data.currentStock),
-          expiryDate: data.expiryDate || null,
-          location: data.location || null,
-          notes: "Initial inventory batch",
-        },
-      });
-
-      // Create restock history record
-      const restock = await prisma.restockHistory.create({
-        data: {
-          ingredientId: ingredient.id,
+          name: data.name,
+          description: data.description || null,
+          category: data.category,
+          unit: data.unit,
+          currentStock: parseFloat(data.currentStock),
+          minimumStock: parseFloat(data.minimumStock || 0),
+          idealStock: parseFloat(data.idealStock || 0),
+          cost: parseFloat(data.cost),
           supplierId: data.supplierId || null,
-          quantity: parseFloat(data.currentStock),
-          cost: parseFloat(data.cost) * parseFloat(data.currentStock),
-          notes: "Initial inventory",
-          userId: dbUser.id,
         },
       });
 
-      // Link batch to restock history
-      await prisma.batch.update({
-        where: { id: batch.id },
-        data: { restockHistoryId: restock.id },
-      });
-
-      // Create activity for batch creation
-      await prisma.activity.create({
+      // Create activity log entry
+      await tx.activity.create({
         data: {
-          action: "BATCH_CREATED",
-          description: `Initial batch created for ${data.name}`,
+          action: "INGREDIENT_ADDED",
+          description: `${dbUser.name || dbUser.email} added new ingredient: ${
+            data.name
+          }`,
+          details: JSON.stringify(ingredient),
           userId: dbUser.id,
-          batchId: batch.id,
           ingredientId: ingredient.id,
         },
       });
 
-      // Check if we need to create low stock alert
-      if (data.currentStock < parseFloat(data.minimumStock || 0)) {
-        const alert = await prisma.lowStockAlert.create({
+      // If initial stock is provided, also create a batch
+      if (parseFloat(data.currentStock) > 0) {
+        // Create restock history record first
+        const restock = await tx.restockHistory.create({
           data: {
             ingredientId: ingredient.id,
-            threshold: parseFloat(data.minimumStock || 0),
-            currentLevel: parseFloat(data.currentStock),
-            status: "PENDING",
-            notes: "Ingredient added with stock below minimum threshold",
+            supplierId: data.supplierId || null,
+            quantity: parseFloat(data.currentStock),
+            cost: parseFloat(data.cost) * parseFloat(data.currentStock),
+            notes: "Initial inventory",
+            userId: dbUser.id,
           },
         });
 
-        await prisma.activity.create({
+        // Then create batch linked to the restock history
+        const batch = await tx.batch.create({
           data: {
-            action: "ALERT_GENERATED",
-            description: `Low stock alert for ${data.name}`,
+            batchNumber: `INIT-${ingredient.id}-${Date.now()}`,
+            ingredientId: ingredient.id,
+            quantity: parseFloat(data.currentStock),
+            remainingQuantity: parseFloat(data.currentStock),
+            cost: parseFloat(data.cost) * parseFloat(data.currentStock),
+            expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+            location: data.location || null,
+            notes: "Initial inventory batch",
+            restockHistoryId: restock.id, // Link directly during creation
+          },
+        });
+
+        // Create activity for batch creation
+        await tx.activity.create({
+          data: {
+            action: "BATCH_CREATED",
+            description: `Initial batch created for ${data.name}`,
             userId: dbUser.id,
-            lowStockAlertId: alert.id,
+            batchId: batch.id,
             ingredientId: ingredient.id,
           },
         });
+
+        // Check if we need to create low stock alert
+        if (
+          parseFloat(data.currentStock) < parseFloat(data.minimumStock || 0)
+        ) {
+          const alert = await tx.lowStockAlert.create({
+            data: {
+              ingredientId: ingredient.id,
+              threshold: parseFloat(data.minimumStock || 0),
+              currentLevel: parseFloat(data.currentStock),
+              status: "PENDING",
+              notes: "Ingredient added with stock below minimum threshold",
+            },
+          });
+
+          await tx.activity.create({
+            data: {
+              action: "ALERT_GENERATED",
+              description: `Low stock alert for ${data.name}`,
+              userId: dbUser.id,
+              lowStockAlertId: alert.id,
+              ingredientId: ingredient.id,
+            },
+          });
+        }
       }
-    }
+
+      return ingredient;
+    });
 
     return NextResponse.json(
-      { message: "Ingredient added successfully", ingredient },
+      { message: "Ingredient added successfully", ingredient: result },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error adding ingredient:", error);
     return NextResponse.json(
-      { error: "Failed to add ingredient" },
+      {
+        error: `Failed to add ingredient: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      },
       { status: 500 }
     );
   }
@@ -170,7 +178,20 @@ export async function GET() {
         batches: {
           where: {
             remainingQuantity: { gt: 0 },
-            expiryDate: { gt: new Date() },
+            AND: [
+              {
+                OR: [{ expiryDate: null }, { expiryDate: { gt: new Date() } }],
+              },
+            ],
+          },
+        },
+        lowStockAlerts: {
+          where: {
+            status: "PENDING",
+          },
+          take: 1,
+          orderBy: {
+            createdAt: "desc",
           },
         },
       },
@@ -180,7 +201,11 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching ingredients:", error);
     return NextResponse.json(
-      { error: "Failed to fetch ingredients" },
+      {
+        error: `Failed to fetch ingredients: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      },
       { status: 500 }
     );
   }
