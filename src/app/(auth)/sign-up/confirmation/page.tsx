@@ -145,13 +145,6 @@ export default function ConfirmationPage() {
                   Back to sign up
                 </Button>
               </Link>
-
-              <p className="text-xs text-gray-500 text-center mt-2">
-                Need help?{" "}
-                <a href="#" className="text-indigo-600 hover:text-indigo-700">
-                  Contact support
-                </a>
-              </p>
             </CardFooter>
           </Card>
         </motion.div>
