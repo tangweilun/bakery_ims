@@ -40,16 +40,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "User not found in system",
-        },
-        { status: 403 }
-      );
-    }
-
     // Parse the request body
     const body = await request.json();
 
@@ -69,86 +59,102 @@ export async function POST(request: NextRequest) {
 
     const data = validationResult.data;
 
-    // Check if ingredient with same name already exists
-    const existingIngredient = await prisma.ingredient.findUnique({
-      where: { name: data.name },
-    });
-
-    if (existingIngredient) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Ingredient with this name already exists",
-        },
-        { status: 409 }
-      );
-    }
-
-    // If supplierId is provided, verify it exists
-    if (data.supplierId) {
-      const supplierExists = await prisma.supplier.findUnique({
-        where: { id: data.supplierId },
+    // Use a transaction to ensure all database operations succeed or fail together
+    const result = await prisma.$transaction(async (tx) => {
+      // Check if ingredient with same name already exists
+      const existingIngredient = await tx.ingredient.findUnique({
+        where: { name: data.name },
       });
 
-      if (!supplierExists) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Supplier not found",
-          },
-          { status: 404 }
-        );
+      if (existingIngredient) {
+        throw new Error("Ingredient with this name already exists");
       }
-    }
 
-    // Create the ingredient
-    const ingredient = await prisma.ingredient.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        category: data.category,
-        unit: data.unit,
-        currentStock: data.currentStock,
-        minimumStock: data.minimumStock,
-        idealStock: data.idealStock,
-        cost: data.cost,
-        supplierId: data.supplierId || null,
-      },
-    });
+      // If supplierId is provided, verify it exists
+      if (data.supplierId) {
+        const supplierExists = await tx.supplier.findUnique({
+          where: { id: data.supplierId },
+        });
 
-    // Log the activity with the actual userId
-    await prisma.activity.create({
-      data: {
-        action: "INGREDIENT_ADDED",
-        description: `New ingredient '${ingredient.name}' added`,
-        details: JSON.stringify(ingredient),
-        userId: Number(user.id),
-        ingredientId: ingredient.id,
-      },
-    });
+        if (!supplierExists) {
+          throw new Error("Supplier not found");
+        }
+      }
 
-    // Check if the ingredient is below minimum stock and create an alert if needed
-    if (ingredient.currentStock < ingredient.minimumStock) {
-      await prisma.lowStockAlert.create({
+      // Create the ingredient
+      const ingredient = await tx.ingredient.create({
         data: {
-          ingredientId: ingredient.id,
-          threshold: ingredient.minimumStock,
-          currentLevel: ingredient.currentStock,
-          status: "PENDING",
-          notes: "Alert automatically generated on ingredient creation",
+          name: data.name,
+          description: data.description,
+          category: data.category,
+          unit: data.unit,
+          currentStock: data.currentStock,
+          minimumStock: data.minimumStock,
+          idealStock: data.idealStock,
+          cost: data.cost,
+          supplierId: data.supplierId || null,
         },
       });
-    }
+
+      // Log the activity
+      await tx.activity.create({
+        data: {
+          action: "INGREDIENT_ADDED",
+          description: `New ingredient '${ingredient.name}' added`,
+          details: JSON.stringify(ingredient),
+          userId: user.id,
+          ingredientId: ingredient.id,
+        },
+      });
+
+      // Check if the ingredient is below minimum stock and create an alert if needed
+      if (ingredient.currentStock < ingredient.minimumStock) {
+        await tx.lowStockAlert.create({
+          data: {
+            ingredientId: ingredient.id,
+            threshold: ingredient.minimumStock,
+            currentLevel: ingredient.currentStock,
+            status: "PENDING",
+            notes: "Alert automatically generated on ingredient creation",
+          },
+        });
+      }
+
+      return ingredient;
+    });
 
     return NextResponse.json(
       {
         success: true,
-        data: ingredient,
+        data: result,
       },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error adding ingredient:", error);
+    
+    // Handle specific errors with appropriate status codes
+    if (error instanceof Error) {
+      if (error.message === "Ingredient with this name already exists") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: error.message,
+          },
+          { status: 409 }
+        );
+      } else if (error.message === "Supplier not found") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: error.message,
+          },
+          { status: 404 }
+        );
+      }
+    }
+    
+    // Generic error response
     return NextResponse.json(
       {
         success: false,

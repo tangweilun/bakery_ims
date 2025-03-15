@@ -14,7 +14,7 @@ export function MainNav({
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/ingredient", label: "Ingredient" },
+    { href: "/ingredients", label: "Ingredient" },
     { href: "/suppliers", label: "Supplier" },
     { href: "/recipes", label: "Recipes" },
     { href: "/batches", label: "Batch Tracking" },

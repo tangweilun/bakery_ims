@@ -38,7 +38,7 @@ export default function DashboardPage() {
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
           <div className="flex items-center space-x-2">
             <Button>
-              <Link href="/inventory/add">Add Ingredient</Link>
+              <Link href="/ingredients/add">Add Ingredient</Link>
             </Button>
           </div>
         </div>

@@ -18,6 +18,15 @@ export default function AddIngredientForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const isFormValid = () => {
+    return (
+      formData.name.trim() !== "" &&
+      formData.category.trim() !== "" &&
+      formData.unit.trim() !== "" &&
+      parseFloat(formData.cost) > 0 &&
+      parseFloat(formData.currentStock) >= 0
+    );
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -284,19 +293,34 @@ export default function AddIngredientForm() {
 
             <div>
               <label className="block mb-2">Supplier</label>
-              <select
-                name="supplierId"
-                value={formData.supplierId}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Select Supplier</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </option>
-                ))}
-              </select>
+              {suppliers && suppliers.length > 0 ? (
+                <select
+                  name="supplierId"
+                  value={formData.supplierId}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Select Supplier</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="flex flex-col space-y-2">
+                  <div className="text-gray-500 italic">
+                    No suppliers available
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/suppliers/add")}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
+                  >
+                    Add Supplier
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
@@ -336,8 +360,12 @@ export default function AddIngredientForm() {
           <div className="mt-6">
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              disabled={isLoading}
+              className={`px-6 py-2 rounded text-white ${
+                isLoading || !isFormValid()
+                  ? "bg-blue-400 opacity-50 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+              disabled={isLoading || !isFormValid()}
             >
               {isLoading ? "Adding..." : "Add Ingredient"}
             </button>

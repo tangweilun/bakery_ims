@@ -133,7 +133,7 @@ export default function IngredientPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>
-                  <Link href="/inventory/add" className="flex items-center">
+                  <Link href="/ingredients/add" className="flex items-center">
                     <Plus className="mr-2 h-4 w-4" />
                     New Ingredient
                   </Link>

@@ -202,7 +202,7 @@ export default function AddSupplier() {
                   <Input
                     id="phone"
                     name="phone"
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="012345678"
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full"

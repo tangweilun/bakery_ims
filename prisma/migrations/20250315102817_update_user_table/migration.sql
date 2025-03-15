@@ -5,9 +5,6 @@ CREATE TYPE "ProductionStatus" AS ENUM ('PLANNED', 'IN_PROGRESS', 'COMPLETED', '
 CREATE TYPE "AlertStatus" AS ENUM ('PENDING', 'ACKNOWLEDGED', 'RESOLVED', 'DISMISSED');
 
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('MANAGER', 'STAFF');
-
--- CreateEnum
 CREATE TYPE "ActivityAction" AS ENUM ('INGREDIENT_ADDED', 'INGREDIENT_UPDATED', 'INGREDIENT_DELETED', 'RECIPE_CREATED', 'RECIPE_UPDATED', 'RECIPE_DELETED', 'PRODUCTION_PLANNED', 'PRODUCTION_STARTED', 'PRODUCTION_COMPLETED', 'PRODUCTION_CANCELLED', 'INGREDIENT_RESTOCKED', 'INGREDIENT_USED', 'BATCH_CREATED', 'BATCH_UPDATED', 'BATCH_EXPIRED', 'BATCH_DEPLETED', 'ALERT_GENERATED', 'ALERT_ACKNOWLEDGED', 'ALERT_RESOLVED', 'USER_CREATED', 'USER_UPDATED', 'USER_DELETED', 'USER_LOGIN', 'USER_LOGOUT', 'REPORT_GENERATED', 'SYSTEM_BACKUP', 'SYSTEM_RESTORE', 'SYSTEM_ERROR');
 
 -- CreateTable
@@ -38,7 +35,6 @@ CREATE TABLE "Supplier" (
     "address" TEXT,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Supplier_pkey" PRIMARY KEY ("id")
 );
@@ -109,7 +105,7 @@ CREATE TABLE "ProductionRecord" (
     "batchNumber" TEXT NOT NULL,
     "status" "ProductionStatus" NOT NULL DEFAULT 'PLANNED',
     "notes" TEXT,
-    "userId" INTEGER NOT NULL,
+    "userId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -125,7 +121,7 @@ CREATE TABLE "RestockHistory" (
     "cost" DOUBLE PRECISION NOT NULL,
     "invoiceNumber" TEXT,
     "notes" TEXT,
-    "userId" INTEGER NOT NULL,
+    "userId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -140,7 +136,7 @@ CREATE TABLE "UsageRecord" (
     "reason" TEXT NOT NULL,
     "notes" TEXT,
     "productionRecordId" INTEGER,
-    "userId" INTEGER NOT NULL,
+    "userId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -186,7 +182,7 @@ CREATE TABLE "InventoryReport" (
     "endDate" TIMESTAMP(3) NOT NULL,
     "reportData" TEXT NOT NULL,
     "notes" TEXT,
-    "userId" INTEGER NOT NULL,
+    "userId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -195,13 +191,10 @@ CREATE TABLE "InventoryReport" (
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
-    "role" "UserRole" NOT NULL DEFAULT 'STAFF',
-    "passwordHash" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -212,7 +205,7 @@ CREATE TABLE "Activity" (
     "action" "ActivityAction" NOT NULL,
     "description" TEXT NOT NULL,
     "details" TEXT,
-    "userId" INTEGER NOT NULL,
+    "userId" UUID NOT NULL,
     "ingredientId" INTEGER,
     "supplierId" INTEGER,
     "recipeId" INTEGER,
