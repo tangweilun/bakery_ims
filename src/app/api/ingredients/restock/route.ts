@@ -1,4 +1,3 @@
-// app/api/inventory/restock/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@/utils/supabase/server";
