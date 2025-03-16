@@ -15,18 +15,6 @@ export async function GET() {
   }
 }
 
-// export async function POST(req: Request) {
-//   try {
-//     const data = await req.json();
-//     const newSupplier = await prisma.supplier.create({ data });
-//     return NextResponse.json(newSupplier, { status: 201 });
-//   } catch (error) {
-//     return NextResponse.json(
-//       { error: "Failed to create supplier" },
-//       { status: 500 }
-//     );
-//   }
-// }
 export async function POST(req: Request) {
   try {
     const data = await req.json();

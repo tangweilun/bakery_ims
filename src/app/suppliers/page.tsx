@@ -220,7 +220,7 @@ export default function ManageSuppliers() {
                               <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/suppliers/edit/${supplier.id}`}>
+                              <Link href={`/suppliers/${supplier.id}/edit`}>
                                 <Pencil className="mr-2 h-4 w-4" /> Edit
                               </Link>
                             </DropdownMenuItem>
@@ -281,7 +281,7 @@ export default function ManageSuppliers() {
                   </div>
 
                   <div className="flex">
-                  <div className="w-2/3 overflow-hidden break-all whitespace-pre-wrap">
+                    <div className="w-2/3 overflow-hidden break-all whitespace-pre-wrap">
                       <MapPin className="h-4 w-4 mr-2 text-gray-500" /> Address:
                     </div>
                     <div className="w-2/3 overflow-hidden break-all whitespace-pre-wrap">
@@ -313,7 +313,7 @@ export default function ManageSuppliers() {
                   Close
                 </Button>
                 <Button asChild variant="default" className="gap-2">
-                  <Link href={`/suppliers/edit/${selectedSupplier.id}`}>
+                  <Link href={`/suppliers/${selectedSupplier.id}/edit`}>
                     <Pencil className="h-4 w-4" /> Edit Supplier
                   </Link>
                 </Button>

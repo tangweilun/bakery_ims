@@ -185,3 +185,52 @@ export async function DELETE(
     );
   }
 }
+
+export async function GET(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  try {
+    // Properly await params before using them
+    const { id } = await context.params;
+    const ingredientId = parseInt(id);
+
+    if (isNaN(ingredientId)) {
+      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
+    }
+
+    const ingredient = await prisma.ingredient.findUnique({
+      where: { id: ingredientId, isActive: true },
+      include: {
+        supplier: true,
+        batches: {
+          orderBy: {
+            expiryDate: "asc",
+          },
+        },
+        lowStockAlerts: {
+          where: {
+            status: {
+              in: ["PENDING", "ACKNOWLEDGED"],
+            },
+          },
+        },
+      },
+    });
+
+    if (!ingredient) {
+      return NextResponse.json(
+        { error: "Ingredient not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(ingredient);
+  } catch (error) {
+    console.error("Error fetching ingredient:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch ingredient" },
+      { status: 500 }
+    );
+  }
+}

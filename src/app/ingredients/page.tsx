@@ -12,14 +12,49 @@ import {
   Trash2,
   Plus,
   AlertTriangle,
-  CheckCircle,
   Filter,
   Search,
   ArrowUpDown,
-  ChevronDown,
-  MoreVertical,
   Eye,
+  X,
+  Loader2,
 } from "lucide-react";
+
+// Import shadcn components
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Ingredient = {
   id: number;
@@ -48,6 +83,7 @@ export default function ManageIngredients() {
     []
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [stockFilter, setStockFilter] = useState("");
@@ -81,14 +117,16 @@ export default function ManageIngredients() {
     // Fetch ingredients
     const fetchIngredients = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const response = await fetch("/api/ingredients");
         if (!response.ok) throw new Error("Failed to fetch ingredients");
         const data = await response.json();
         setIngredients(data);
         setFilteredIngredients(data);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching ingredients:", err);
+        setError(err.message || "Failed to load ingredients");
         toast.error("Failed to load ingredients");
       } finally {
         setIsLoading(false);
@@ -224,11 +262,22 @@ export default function ManageIngredients() {
   // Get stock status for an ingredient
   const getStockStatus = (ingredient: Ingredient) => {
     if (ingredient.currentStock < ingredient.minimumStock) {
-      return { status: "low", color: "text-red-600 bg-red-100" };
+      return {
+        status: "low",
+        className: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
+      };
     } else if (ingredient.currentStock < ingredient.idealStock) {
-      return { status: "normal", color: "text-yellow-600 bg-yellow-100" };
+      return {
+        status: "normal",
+        className:
+          "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
+      };
     } else {
-      return { status: "ideal", color: "text-green-600 bg-green-100" };
+      return {
+        status: "ideal",
+        className:
+          "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
+      };
     }
   };
 
@@ -248,36 +297,35 @@ export default function ManageIngredients() {
 
       {/* Main Content */}
       <div className="container mx-auto py-8 px-4">
-        <div className="bg-white rounded-lg shadow-md border border-gray-100">
+        <Card>
           {/* Page Header */}
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-wrap gap-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">
+              <CardTitle className="text-2xl font-bold">
                 Manage Ingredients
-              </h1>
-              <p className="text-gray-600 mt-1">
+              </CardTitle>
+              <CardDescription>
                 View, edit, and manage your ingredient inventory
-              </p>
+              </CardDescription>
             </div>
-            <Link
-              href="/ingredients/add"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors shadow-sm"
-            >
-              <Plus size={18} /> Add New Ingredient
-            </Link>
-          </div>
+            <Button asChild>
+              <Link href="/ingredients/add">
+                <Plus className="mr-2 h-4 w-4" /> Add New Ingredient
+              </Link>
+            </Button>
+          </CardHeader>
 
           {/* Filters Section */}
-          <div className="p-6 border-b border-gray-100 bg-gray-50">
+          <CardContent className="py-4 space-y-4">
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
               {/* Search */}
               <div className="relative w-full md:w-1/3">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search size={18} className="text-gray-400" />
+                  <Search className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <input
+                <Input
                   type="text"
-                  className="w-full pl-10 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="pl-10"
                   placeholder="Search ingredients..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -287,39 +335,41 @@ export default function ManageIngredients() {
               {/* Filter Dropdowns */}
               <div className="flex flex-wrap gap-3 w-full md:w-auto">
                 {/* Category Filter */}
-                <div className="w-full sm:w-auto">
-                  <select
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                  >
-                    <option value="">All Categories</option>
+                <Select
+                  value={categoryFilter}
+                  onValueChange={setCategoryFilter}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">All Categories</SelectItem>
                     {categories.map((category) => (
-                      <option key={category} value={category}>
+                      <SelectItem key={category} value={category}>
                         {category}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                </div>
+                  </SelectContent>
+                </Select>
 
                 {/* Stock Level Filter */}
-                <div className="w-full sm:w-auto">
-                  <select
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={stockFilter}
-                    onChange={(e) => setStockFilter(e.target.value)}
-                  >
-                    <option value="">All Stock Levels</option>
-                    <option value="low">Low Stock</option>
-                    <option value="normal">Normal Stock</option>
-                    <option value="ideal">Ideal Stock</option>
-                  </select>
-                </div>
+                <Select value={stockFilter} onValueChange={setStockFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="All Stock Levels" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">All Stock Levels</SelectItem>
+                    <SelectItem value="low">Low Stock</SelectItem>
+                    <SelectItem value="normal">Normal Stock</SelectItem>
+                    <SelectItem value="ideal">Ideal Stock</SelectItem>
+                  </SelectContent>
+                </Select>
 
                 {/* Clear Filters Button */}
-                <button
+                <Button
+                  variant="outline"
+                  size="icon"
                   onClick={clearFilters}
-                  className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
                   disabled={
                     !searchTerm &&
                     !categoryFilter &&
@@ -327,301 +377,267 @@ export default function ManageIngredients() {
                     sortField === "name" &&
                     sortDirection === "asc"
                   }
+                  title="Clear Filters"
                 >
-                  Clear Filters
-                </button>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </div>
+          </CardContent>
 
-          {/* Ingredients Table */}
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="flex justify-center items-center p-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            ) : filteredIngredients.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="mb-4 flex justify-center">
-                  {searchTerm || categoryFilter || stockFilter ? (
-                    <Filter size={48} className="text-gray-400" />
-                  ) : (
-                    <AlertTriangle size={48} className="text-yellow-500" />
-                  )}
-                </div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">
-                  {searchTerm || categoryFilter || stockFilter
-                    ? "No ingredients match your filters"
-                    : "No ingredients found"}
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  {searchTerm || categoryFilter || stockFilter
-                    ? "Try adjusting your search or filter criteria"
-                    : "Get started by adding your first ingredient"}
-                </p>
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="mt-4 text-muted-foreground">
+                Loading ingredients...
+              </p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {!isLoading && error && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <AlertTriangle className="h-12 w-12 text-destructive" />
+              <h3 className="mt-4 text-lg font-medium">Something went wrong</h3>
+              <p className="mt-2 text-muted-foreground">{error}</p>
+              <Button
+                variant="outline"
+                className="mt-6"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !error && filteredIngredients.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="rounded-full bg-muted p-3">
                 {searchTerm || categoryFilter || stockFilter ? (
-                  <button
-                    onClick={clearFilters}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors"
-                  >
-                    Clear All Filters
-                  </button>
+                  <Filter className="h-10 w-10 text-muted-foreground" />
                 ) : (
-                  <Link
-                    href="/ingredients/add"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors inline-flex items-center gap-2"
-                  >
-                    <Plus size={18} /> Add Ingredient
-                  </Link>
+                  <AlertTriangle className="h-10 w-10 text-amber-500" />
                 )}
               </div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              <h3 className="mt-4 text-lg font-medium">
+                {searchTerm || categoryFilter || stockFilter
+                  ? "No ingredients match your filters"
+                  : "No ingredients found"}
+              </h3>
+              <p className="mt-2 text-center text-muted-foreground max-w-md">
+                {searchTerm || categoryFilter || stockFilter
+                  ? "Try adjusting your search or filter criteria"
+                  : "Get started by adding your first ingredient"}
+              </p>
+              <div className="mt-6">
+                {searchTerm || categoryFilter || stockFilter ? (
+                  <Button variant="outline" onClick={clearFilters}>
+                    Clear All Filters
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href="/ingredients/add">
+                      <Plus className="mr-2 h-4 w-4" /> Add Ingredient
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Ingredients Table */}
+          {!isLoading && !error && filteredIngredients.length > 0 && (
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead
+                      className="cursor-pointer w-[200px]"
                       onClick={() => handleSort("name")}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Name</span>
                         {sortField === "name" && (
-                          <ArrowUpDown
-                            size={14}
-                            className={`ml-1 ${
-                              sortDirection === "desc"
-                                ? "transform rotate-180"
-                                : ""
-                            }`}
-                          />
+                          <ArrowUpDown className="h-3 w-3 ml-1" />
                         )}
                       </div>
-                    </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer w-[120px]"
                       onClick={() => handleSort("category")}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Category</span>
                         {sortField === "category" && (
-                          <ArrowUpDown
-                            size={14}
-                            className={`ml-1 ${
-                              sortDirection === "desc"
-                                ? "transform rotate-180"
-                                : ""
-                            }`}
-                          />
+                          <ArrowUpDown className="h-3 w-3 ml-1" />
                         )}
                       </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <span>Stock</span>
-                    </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    </TableHead>
+                    <TableHead className="w-[100px]">Stock</TableHead>
+                    <TableHead
+                      className="cursor-pointer w-[140px]"
                       onClick={() => handleSort("currentStock")}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Quantity</span>
                         {sortField === "currentStock" && (
-                          <ArrowUpDown
-                            size={14}
-                            className={`ml-1 ${
-                              sortDirection === "desc"
-                                ? "transform rotate-180"
-                                : ""
-                            }`}
-                          />
+                          <ArrowUpDown className="h-3 w-3 ml-1" />
                         )}
                       </div>
-                    </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer w-[100px]"
                       onClick={() => handleSort("cost")}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Cost</span>
                         {sortField === "cost" && (
-                          <ArrowUpDown
-                            size={14}
-                            className={`ml-1 ${
-                              sortDirection === "desc"
-                                ? "transform rotate-180"
-                                : ""
-                            }`}
-                          />
+                          <ArrowUpDown className="h-3 w-3 ml-1" />
                         )}
                       </div>
-                    </th>
-                    <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer w-[140px]"
                       onClick={() => handleSort("supplier")}
                     >
                       <div className="flex items-center space-x-1">
                         <span>Supplier</span>
                         {sortField === "supplier" && (
-                          <ArrowUpDown
-                            size={14}
-                            className={`ml-1 ${
-                              sortDirection === "desc"
-                                ? "transform rotate-180"
-                                : ""
-                            }`}
-                          />
+                          <ArrowUpDown className="h-3 w-3 ml-1" />
                         )}
                       </div>
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    </TableHead>
+                    <TableHead className="text-right w-[120px]">
                       Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {filteredIngredients.map((ingredient) => {
                     const stockStatus = getStockStatus(ingredient);
                     return (
-                      <tr key={ingredient.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">
-                            {ingredient.name}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            {ingredient.category}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${stockStatus.color}`}
+                      <TableRow key={ingredient.id}>
+                        <TableCell className="font-medium">
+                          {ingredient.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{ingredient.category}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={stockStatus.className}
+                            variant="outline"
                           >
                             {stockStatus.status === "low"
                               ? "Low Stock"
                               : stockStatus.status === "normal"
                               ? "Normal"
                               : "Ideal"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
                             {ingredient.currentStock} {ingredient.unit}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             Min: {ingredient.minimumStock} | Ideal:{" "}
                             {ingredient.idealStock}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            ${ingredient.cost.toFixed(2)}/{ingredient.unit}
+                        </TableCell>
+                        <TableCell>
+                          ${ingredient.cost.toFixed(2)}/{ingredient.unit}
+                        </TableCell>
+                        <TableCell>
+                          {ingredient.supplier?.name || "Not specified"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-1">
+                            <Button size="icon" variant="ghost" asChild>
+                              <Link
+                                href={`/ingredients/${ingredient.id}`}
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button size="icon" variant="ghost" asChild>
+                              <Link
+                                href={`/ingredients/${ingredient.id}/edit`}
+                                title="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => confirmDelete(ingredient.id)}
+                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {ingredient.supplier?.name || "Not specified"}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2 flex justify-end">
-                          <Link
-                            href={`/ingredients/${ingredient.id}`}
-                            className="text-blue-500 hover:text-blue-700 p-1 rounded-md hover:bg-blue-50 transition-colors"
-                            title="View Details"
-                          >
-                            <Eye size={18} />
-                          </Link>
-                          <Link
-                            href={`/ingredients/edit/${ingredient.id}`}
-                            className="text-indigo-500 hover:text-indigo-700 p-1 rounded-md hover:bg-indigo-50 transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil size={18} />
-                          </Link>
-                          <button
-                            onClick={() => confirmDelete(ingredient.id)}
-                            className="text-red-500 hover:text-red-700 p-1 rounded-md hover:bg-red-50 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Table Footer / Pagination could go here */}
-          {!isLoading && filteredIngredients.length > 0 && (
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 text-sm text-gray-600">
-              Showing {filteredIngredients.length} of {ingredients.length}{" "}
-              ingredients
+                </TableBody>
+              </Table>
             </div>
           )}
-        </div>
+
+          {/* Table Footer */}
+          {!isLoading && !error && filteredIngredients.length > 0 && (
+            <CardFooter className="flex justify-between border-t px-6 py-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredIngredients.length} of {ingredients.length}{" "}
+                ingredients
+              </p>
+            </CardFooter>
+          )}
+        </Card>
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-center text-red-500 mb-4">
-              <AlertTriangle size={48} />
-            </div>
-            <h3 className="text-lg font-bold text-center mb-2">
-              Confirm Deletion
-            </h3>
-            <p className="text-gray-600 text-center mb-6">
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
               Are you sure you want to delete this ingredient? This action
               cannot be undone.
-            </p>
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                disabled={deleteLoading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
-                disabled={deleteLoading}
-              >
-                {deleteLoading ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Deleting...
-                  </>
-                ) : (
-                  "Delete"
-                )}
-              </button>
-            </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center text-destructive my-4">
+            <AlertTriangle className="h-12 w-12" />
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={deleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
