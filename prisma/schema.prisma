@@ -36,7 +36,7 @@ model Ingredient {
   cost              Float               // Cost per unit
   supplier          Supplier?           @relation(fields: [supplierId], references: [id])
   supplierId        Int?
-  
+  isActive          Boolean             @default(true) // Flag to mark ingredient as active/inactive
   // Relations
   batches           Batch[]
   restockHistory    RestockHistory[]
@@ -257,7 +257,7 @@ model InventoryReport {
   updatedAt         DateTime @updatedAt
 }
 model User {
-  id                String  @id @default(dbgenerated()) @db.Uuid
+  id                String  @id @default(uuid()) @db.Uuid
   email             String  @unique
   name              String?
   // Relations
@@ -316,7 +316,8 @@ enum ActivityAction {
   INGREDIENT_ADDED
   INGREDIENT_UPDATED
   INGREDIENT_DELETED
-  
+  INGREDIENT_MARKED_INACTIVE
+
   RECIPE_CREATED
   RECIPE_UPDATED
   RECIPE_DELETED

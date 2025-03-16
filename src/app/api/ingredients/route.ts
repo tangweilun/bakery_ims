@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       await tx.activity.create({
         data: {
           action: "INGREDIENT_ADDED",
-          description: `New ingredient '${ingredient.name}' added`,
+          description: `New ingredient '${ingredient.name}' added by  '${user.email}'`,
           details: JSON.stringify(ingredient),
           userId: user.id,
           ingredientId: ingredient.id,
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error adding ingredient:", error);
-    
+
     // Handle specific errors with appropriate status codes
     if (error instanceof Error) {
       if (error.message === "Ingredient with this name already exists") {
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    
+
     // Generic error response
     return NextResponse.json(
       {
@@ -165,5 +165,29 @@ export async function POST(request: NextRequest) {
     );
   } finally {
     await prisma.$disconnect();
+  }
+}
+
+// GET all ingredients
+export async function GET(request: NextRequest) {
+  try {
+    // Query ingredients
+    const ingredients = await prisma.ingredient.findMany({
+      where: { isActive: true }, // ✅ Only fetch active ingredients
+      include: {
+        supplier: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    return NextResponse.json(ingredients);
+  } catch (error) {
+    console.error("Error fetching ingredients:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch ingredients" },
+      { status: 500 }
+    );
   }
 }
