@@ -1,10 +1,7 @@
-// app/api/ingredients/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // Input validation schema using Zod
 const ingredientSchema = z.object({

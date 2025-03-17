@@ -1,9 +1,7 @@
 // File: app/api/suppliers/[id]/route.ts
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 // Schema for validation
 const supplierSchema = z.object({

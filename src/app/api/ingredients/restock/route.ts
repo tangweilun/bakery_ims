@@ -1,6 +1,6 @@
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+
 // POST record a new restock
 export async function POST(request: NextRequest) {
   try {

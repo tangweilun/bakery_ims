@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
-
-const prisma = new PrismaClient();
+import { Prisma } from "@prisma/client";
 
 // PATCH update an ingredient
 export async function PATCH(

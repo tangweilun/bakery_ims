@@ -1,7 +1,5 @@
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export async function GET() {
   try {
@@ -18,7 +16,6 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    console.log("Received data:", data); // Debugging
     const newSupplier = await prisma.supplier.create({ data });
     return NextResponse.json(newSupplier, { status: 201 });
   } catch (error) {
