@@ -1,46 +1,3 @@
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Button } from "@/components/ui/button";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuGroup,
-//   DropdownMenuItem,
-//   DropdownMenuLabel,
-//   DropdownMenuSeparator,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
-
-// export function UserNav() {
-//   return (
-//     <DropdownMenu>
-//       <DropdownMenuTrigger asChild>
-//         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-//           <Avatar className="h-8 w-8">
-//             <AvatarImage src="/avatars/01.png" alt="@bakeryuser" />
-//             <AvatarFallback>BU</AvatarFallback>
-//           </Avatar>
-//         </Button>
-//       </DropdownMenuTrigger>
-//       <DropdownMenuContent className="w-56" align="end" forceMount>
-//         <DropdownMenuLabel className="font-normal">
-//           <div className="flex flex-col space-y-1">
-//             <p className="text-sm font-medium leading-none">bakeryuser</p>
-//             <p className="text-xs leading-none text-muted-foreground">
-//               baker@example.com
-//             </p>
-//           </div>
-//         </DropdownMenuLabel>
-//         <DropdownMenuSeparator />
-//         <DropdownMenuGroup>
-//           <DropdownMenuItem>Profile</DropdownMenuItem>
-//           <DropdownMenuItem>Settings</DropdownMenuItem>
-//         </DropdownMenuGroup>
-//         <DropdownMenuSeparator />
-//         <DropdownMenuItem>Log out</DropdownMenuItem>
-//       </DropdownMenuContent>
-//     </DropdownMenu>
-//   );
-// }
 "use client";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -55,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createBrowserClient } from "@supabase/ssr";
-import { redirect } from "next/dist/server/api-utils";
 import { useRouter } from "next/navigation";
 
 const supabase = createBrowserClient(
@@ -66,8 +22,13 @@ const supabase = createBrowserClient(
 interface UserData {
   id: string;
   email: string | null;
-  username: string;
-  avatar_url: string | null;
+  user_metadata: {
+    avatar_url?: string | null;
+    picture?: string | null;
+    full_name?: string | null;
+    name?: string | null;
+    email?: string | null;
+  };
 }
 
 export function UserNav() {
@@ -87,21 +48,18 @@ export function UserNav() {
         return;
       }
 
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("username, avatar_url")
-        .eq("id", session.user.id)
-        .single();
+      // Get the user data directly from the auth session
+      const { data: userData, error } = await supabase.auth.getUser();
 
-      if (error && error.code !== "PGRST116") {
-        console.log("Error fetching profile:", error);
+      if (error) {
+        console.log("Error fetching user:", error);
+        setLoading(false);
+        return;
       }
-
       setUser({
-        id: session.user.id,
-        email: session.user.email ?? null,
-        username: profile?.username || "User",
-        avatar_url: profile?.avatar_url || null,
+        id: userData.user.id,
+        email: userData.user.email || "",
+        user_metadata: userData.user.user_metadata || {},
       });
 
       setLoading(false);
@@ -130,9 +88,28 @@ export function UserNav() {
     router.push("/");
   };
 
+  const getAvatarUrl = () => {
+    // Try all possible avatar locations
+    return (
+      user?.user_metadata?.avatar_url ||
+      user?.user_metadata?.picture ||
+      "/avatars/01.png"
+    );
+  };
+
+  const getUsername = () => {
+    return (
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      (user?.email ? user.email.split("@")[0] : null) ||
+      "User"
+    );
+  };
+
   const getInitials = () => {
-    return user?.username
-      ? user.username
+    const username = getUsername();
+    return username
+      ? username
           .split(" ")
           .map((part) => part[0])
           .join("")
@@ -145,10 +122,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage
-              src={user?.avatar_url || "/avatars/01.png"}
-              alt="Avatar"
-            />
+            <AvatarImage src={getAvatarUrl()} alt="Avatar" />
             <AvatarFallback>{loading ? "..." : getInitials()}</AvatarFallback>
           </Avatar>
         </Button>
@@ -161,7 +135,7 @@ export function UserNav() {
             ) : user ? (
               <>
                 <p className="text-sm font-medium leading-none">
-                  {user.username}
+                  {getUsername()}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {user.email}
@@ -176,14 +150,20 @@ export function UserNav() {
         {user ? (
           <>
             <DropdownMenuGroup>
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              {/* <DropdownMenuItem onClick={() => router.push("/profile")}>
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
+                Settings
+              </DropdownMenuItem> */}
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            {/* <DropdownMenuSeparator /> */}
             <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
           </>
         ) : (
-          <DropdownMenuItem>Sign in</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push("/login")}>
+            Sign in
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

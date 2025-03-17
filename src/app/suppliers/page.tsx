@@ -48,19 +48,9 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
+import { Supplier } from "@/types/supplier";
 
 // Update interface to match Prisma schema
-interface Supplier {
-  id: number;
-  name: string;
-  contactPerson?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export default function ManageSuppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);

@@ -18,6 +18,11 @@ import {
   Eye,
   X,
   Loader2,
+  CircleDollarSign,
+  BarChart4,
+  Tag,
+  FileText,
+  Package,
 } from "lucide-react";
 
 // Import shadcn components
@@ -55,25 +60,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-type Ingredient = {
-  id: number;
-  name: string;
-  category: string;
-  unit: string;
-  currentStock: number;
-  minimumStock: number;
-  idealStock: number;
-  cost: number;
-  supplier?: {
-    id: number;
-    name: string;
-  };
-  location?: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import { Ingredient } from "@/types/ingredient";
 
 export default function ManageIngredients() {
   const router = useRouter();
@@ -90,6 +77,9 @@ export default function ManageIngredients() {
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState<boolean>(false);
+  const [selectedIngredient, setSelectedIngredient] =
+    useState<Ingredient | null>(null);
   const [ingredientToDelete, setIngredientToDelete] = useState<number | null>(
     null
   );
@@ -279,6 +269,22 @@ export default function ManageIngredients() {
           "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
       };
     }
+  };
+
+  const viewIngredientDetails = (ingredient: Ingredient) => {
+    setSelectedIngredient(ingredient);
+
+    setViewDialogOpen(true);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+
+      month: "short",
+
+      day: "numeric",
+    });
   };
 
   return (
@@ -553,23 +559,23 @@ export default function ManageIngredients() {
                           {ingredient.supplier?.name || "Not specified"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1">
-                            <Button size="icon" variant="ghost" asChild>
-                              <Link
-                                href={`/ingredients/${ingredient.id}`}
-                                title="View Details"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Link>
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              asChild
+                              onClick={() => viewIngredientDetails(ingredient)}
+                            >
+                              <Eye className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" asChild>
-                              <Link
-                                href={`/ingredients/${ingredient.id}/edit`}
-                                title="Edit"
-                              >
+                            <Link
+                              href={`/ingredients/${ingredient.id}/edit`}
+                              title="Edit"
+                            >
+                              <Button size="icon" variant="ghost">
                                 <Pencil className="h-4 w-4" />
-                              </Link>
-                            </Button>
+                              </Button>
+                            </Link>
                             <Button
                               size="icon"
                               variant="ghost"
@@ -600,6 +606,135 @@ export default function ManageIngredients() {
           )}
         </Card>
       </div>
+
+      {/* View Ingredient Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ingredient Details</DialogTitle>
+            <DialogDescription>
+              Complete information about the ingredient
+            </DialogDescription>
+          </DialogHeader>
+          {selectedIngredient && (
+            <div className="space-y-6">
+              <div className="border rounded-md p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-medium">
+                      {selectedIngredient.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Ingredient ID: {selectedIngredient.id}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-y-4 mt-6">
+                  <div className="flex">
+                    <div className="w-1/3 font-medium flex items-start">
+                      <Tag className="h-4 w-4 mr-2 text-gray-500" /> Category:
+                    </div>
+                    <div className="w-2/3">{selectedIngredient.category}</div>
+                  </div>
+
+                  <div className="flex">
+                    <div className="w-1/3 font-medium flex items-start mt-1">
+                      <FileText className="h-4 w-4 mr-2 text-gray-500" />{" "}
+                      Description:
+                    </div>
+                    <div className="w-2/3">
+                      {selectedIngredient.description || "—"}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <div className="w-1/3 font-medium flex items-center">
+                      <Package className="h-4 w-4 mr-2 text-gray-500" /> Unit:
+                    </div>
+                    <div className="w-2/3">{selectedIngredient.unit}</div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <div className="w-1/3 font-medium flex items-center">
+                      <CircleDollarSign className="h-4 w-4 mr-2 text-gray-500" />{" "}
+                      Cost per unit:
+                    </div>
+                    <div className="w-2/3">
+                      ${selectedIngredient.cost.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <div className="font-medium flex items-center mb-2">
+                      <BarChart4 className="h-4 w-4 mr-2 text-gray-500" />{" "}
+                      Inventory Levels:
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <div className="text-sm text-gray-500">Current</div>
+                        <div className="font-semibold">
+                          {selectedIngredient.currentStock}{" "}
+                          {selectedIngredient.unit}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <div className="text-sm text-gray-500">Minimum</div>
+                        <div className="font-semibold">
+                          {selectedIngredient.minimumStock}{" "}
+                          {selectedIngredient.unit}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <div className="text-sm text-gray-500">Ideal</div>
+                        <div className="font-semibold">
+                          {selectedIngredient.idealStock}{" "}
+                          {selectedIngredient.unit}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedIngredient.supplier && (
+                    <div className="flex">
+                      <div className="w-1/3 font-medium">Supplier:</div>
+                      <div className="w-2/3">
+                        <Link
+                          href={`/suppliers`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {selectedIngredient.supplier.name}
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 flex justify-between text-sm text-gray-500 mt-4">
+                  <div>Created: {formatDate(selectedIngredient.createdAt)}</div>
+                  <div>
+                    Last Updated: {formatDate(selectedIngredient.updatedAt)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setViewDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button asChild variant="default" className="gap-2">
+                  <Link href={`/ingredients/${selectedIngredient.id}/edit`}>
+                    <Pencil className="h-4 w-4" /> Edit Ingredient
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
