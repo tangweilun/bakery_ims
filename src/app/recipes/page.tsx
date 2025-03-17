@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { RecipeDialog } from "./recipe-dialog";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
-import { Recipe, RecipeWithIngredients } from "@/types/recipe";
+import { Recipe } from "@/types/recipe";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
 

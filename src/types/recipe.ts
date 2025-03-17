@@ -10,6 +10,15 @@ export interface Recipe {
   sellingPrice: number;
   createdAt: string;
   updatedAt: string;
+  recipeIngredients: {
+    ingredientId: number;
+    quantity: number;
+    ingredient: {
+      name: string;
+      unit: string;
+      currentStock: number;
+    };
+  }[];
 }
 
 export interface RecipeIngredient {
@@ -17,14 +26,4 @@ export interface RecipeIngredient {
   recipeId: number;
   ingredientId: number;
   quantity: number;
-}
-
-export interface RecipeWithIngredients extends Recipe {
-  recipeIngredients: (RecipeIngredient & {
-    ingredient: {
-      id: number;
-      name: string;
-      unit: string;
-    };
-  })[];
 }
