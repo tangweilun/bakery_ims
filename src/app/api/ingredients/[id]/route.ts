@@ -9,7 +9,7 @@ export async function PATCH(
   context: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = context.params;
     const ingredientId = parseInt(id);
 
     const data = await request.json();
@@ -115,8 +115,8 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params; // Ensure params is awaited before using it
-    const ingredientId = await parseInt(id, 10); // Convert ID to integer
+    const { id } = context.params; // Ensure params is awaited before using it
+    const ingredientId = parseInt(id, 10); // Convert ID to integer
 
     const supabase = await createClient();
     const {
@@ -191,7 +191,7 @@ export async function GET(
 ) {
   try {
     // Properly await params before using them
-    const { id } = await context.params;
+    const { id } = context.params;
     const ingredientId = parseInt(id);
 
     if (isNaN(ingredientId)) {
