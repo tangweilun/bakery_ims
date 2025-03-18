@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       await tx.activity.create({
         data: {
           action: "INGREDIENT_ADDED",
-          description: `New ingredient '${ingredient.name}' added by  '${user.email}'`,
+          description: `New ingredient '${ingredient.name}'`,
           details: JSON.stringify(ingredient),
           userId: user.id,
           ingredientId: ingredient.id,
@@ -170,7 +170,7 @@ export async function GET() {
   try {
     // Query ingredients
     const ingredients = await prisma.ingredient.findMany({
-      where: { isActive: true }, // ✅ Only fetch active ingredients
+      where: { isActive: true }, // Only fetch active ingredients
       include: {
         supplier: true,
       },

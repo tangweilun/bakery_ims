@@ -114,10 +114,12 @@ export default function ManageIngredients() {
         const data = await response.json();
         setIngredients(data);
         setFilteredIngredients(data);
-      } catch (err: any) {
-        console.error("Error fetching ingredients:", err);
-        setError(err.message || "Failed to load ingredients");
-        toast.error("Failed to load ingredients");
+      } catch (err) {
+        if (err instanceof Error) {
+          console.error("Error fetching ingredients:", err);
+          setError(err.message || "Failed to load ingredients");
+          toast.error("Failed to load ingredients");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -227,8 +229,10 @@ export default function ManageIngredients() {
         ingredients.filter((ing) => ing.id !== ingredientToDelete)
       );
       toast.success("Ingredient deleted successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete ingredient");
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message || "Failed to delete ingredient");
+      }
     } finally {
       setDeleteLoading(false);
       setShowDeleteModal(false);

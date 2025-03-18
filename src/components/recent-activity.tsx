@@ -3,16 +3,24 @@
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Activity } from "@/types/activity";
 
 /**
  * Generates a summary string based on the activity's action and details.
  * @param activity - The activity object containing action and details.
  * @returns A formatted summary string.
  */
-function getActivitySummary(activity: any) {
-  let details: any = {};
+interface ActivityDetails {
+  quantity?: number;
+  unit?: string;
+  batchNumber?: string;
+}
+
+function getActivitySummary(activity: Activity) {
+  let details: ActivityDetails = {};
+
   try {
-    details = JSON.parse(activity.details || "{}");
+    details = JSON.parse(activity.details || "{}") as ActivityDetails;
   } catch {
     details = {};
   }
@@ -66,7 +74,7 @@ function SkeletonRecentActivity() {
  * Shows a skeleton loader while data is being fetched.
  */
 export function RecentActivity() {
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import {
   Dialog,
@@ -194,7 +194,11 @@ export function RecipeDialog({
   };
 
   // Update ingredient details
-  const handleIngredientChange = (index: number, field: string, value: any) => {
+  const handleIngredientChange = (
+    index: number,
+    field: string,
+    value: unknown
+  ) => {
     const updatedIngredients = [...recipeIngredients];
 
     if (field === "ingredientId") {
@@ -298,7 +302,8 @@ export function RecipeDialog({
               </div>
             ) : recipeIngredients.length === 0 ? (
               <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                No ingredients added yet. Click "Add Ingredient" to start.
+                No ingredients added yet. Click &quot;Add Ingredient&quot; to
+                start.
               </div>
             ) : (
               <div className="space-y-3">

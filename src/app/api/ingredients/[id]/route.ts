@@ -60,7 +60,7 @@ export async function PATCH(
       await tx.activity.create({
         data: {
           action: "INGREDIENT_UPDATED",
-          description: `Updated ingredient: ${ingredient.name} by ${user.email}`,
+          description: `Updated ingredient: ${ingredient.name}`,
           userId: user.id,
           ingredientId: ingredient.id,
         },
@@ -157,7 +157,7 @@ export async function DELETE(
       await tx.activity.create({
         data: {
           action: "INGREDIENT_DELETED",
-          description: `Deleted ingredient: ${ingredient.name} by ${user.email}`,
+          description: `Deleted ingredient: ${ingredient.name}`,
           userId: user.id,
           ingredientId: ingredient.id,
         },

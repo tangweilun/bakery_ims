@@ -93,7 +93,7 @@ export function UserNav() {
     return (
       user?.user_metadata?.avatar_url ||
       user?.user_metadata?.picture ||
-      "/avatars/01.png"
+      "/avatars.jpeg"
     );
   };
 

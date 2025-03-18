@@ -13,7 +13,8 @@ export interface Recipe {
   recipeIngredients: {
     ingredientId: number;
     quantity: number;
-    ingredient: {
+    ingredient?: {
+      // ingredient optional
       name: string;
       unit: string;
       currentStock: number;
@@ -26,4 +27,10 @@ export interface RecipeIngredient {
   recipeId: number;
   ingredientId: number;
   quantity: number;
+  ingredient?: {
+    //  Keep it optional here too
+    name: string;
+    unit: string;
+    currentStock: number;
+  };
 }

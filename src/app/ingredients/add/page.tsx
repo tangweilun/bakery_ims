@@ -137,8 +137,10 @@ export default function AddIngredientForm() {
 
       // Refresh data
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add ingredient");
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message || "Failed to add ingredient");
+      }
     } finally {
       setIsLoading(false);
     }
