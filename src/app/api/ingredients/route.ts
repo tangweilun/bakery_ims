@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET all ingredients
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Query ingredients
     const ingredients = await prisma.ingredient.findMany({

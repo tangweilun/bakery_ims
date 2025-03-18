@@ -45,8 +45,10 @@ export default function SignInPage() {
       if (error) throw error;
       router.push("/dashboard"); // Redirect to dashboard after successful login
       router.refresh(); // Refresh server components
-    } catch (error: any) {
-      setError(error.message || "Error signing in");
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message || "Error signing in");
+      }
     } finally {
       setLoading(false);
     }
@@ -65,11 +67,13 @@ export default function SignInPage() {
         },
       });
 
-      if (error) throw error;
+      if (error instanceof Error) throw error;
       // Redirect is handled by OAuth flow
-    } catch (error: any) {
-      setError(error.message || "Error signing in with Google");
-      setLoading(false);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message || "Error signing in with Google");
+        setLoading(false);
+      }
     }
   };
 
@@ -199,7 +203,7 @@ export default function SignInPage() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link
                   href="/sign-up"
                   className="font-medium text-indigo-600 hover:text-indigo-700"

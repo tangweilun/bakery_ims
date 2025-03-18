@@ -28,7 +28,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [businessName, setBusinessName] = useState("");
+  // const [businessName, setBusinessName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,11 +50,11 @@ export default function SignUpPage() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            business_name: businessName,
-          },
-        },
+        // options: {
+        //   data: {
+        //     business_name: businessName,
+        //   },
+        // },
       });
 
       if (signUpError) throw signUpError;
@@ -77,12 +77,14 @@ export default function SignUpPage() {
         router.push("/dashboard");
         router.refresh();
       }
-    } catch (error: any) {
-      // Some Supabase configurations might throw an explicit error for existing users
-      if (error.message?.includes("already registered")) {
-        setError("This email is already registered. Please sign in instead.");
-      } else {
-        setError(error.message || "Error creating account");
+    } catch (error) {
+      if (error instanceof Error) {
+        // Some Supabase configurations might throw an explicit error for existing users
+        if (error.message?.includes("already registered")) {
+          setError("This email is already registered. Please sign in instead.");
+        } else {
+          setError(error.message || "Error creating account");
+        }
       }
     } finally {
       setLoading(false);
@@ -102,11 +104,13 @@ export default function SignUpPage() {
         },
       });
 
-      if (error) throw error;
+      if (error instanceof Error) throw error;
       // Redirect is handled by OAuth flow
-    } catch (error: any) {
-      setError(error.message || "Error signing up with Google");
-      setLoading(false);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message || "Error signing up with Google");
+        setLoading(false);
+      }
     }
   };
 

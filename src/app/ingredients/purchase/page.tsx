@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { Search } from "@/components/search";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Scan, ShoppingCart } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -26,7 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+// import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -370,12 +369,12 @@ export default function PurchaseIngredientPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
+                      {/* <Calendar
                         mode="single"
                         selected={date}
                         onSelect={handleDateSelect}
                         initialFocus
-                      />
+                      /> */}
                     </PopoverContent>
                   </Popover>
                 </div>

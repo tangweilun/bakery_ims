@@ -114,8 +114,8 @@ export default function LandingPage() {
             Powerful Inventory Features
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Everything you need to manage your bakery's inventory efficiently in
-            one comprehensive solution.
+            Everything you need to manage your bakery&apos;s inventory
+            efficiently in one comprehensive solution.
           </p>
         </motion.div>
 

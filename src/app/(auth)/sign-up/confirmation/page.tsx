@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
@@ -46,8 +46,10 @@ export default function ConfirmationPage() {
       if (error) throw error;
 
       setResendStatus("Verification email resent! Please check your inbox.");
-    } catch (error: any) {
-      setResendStatus(`Error: ${error.message || "Failed to resend email"}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        setResendStatus(`Error: ${error.message || "Failed to resend email"}`);
+      }
     } finally {
       setResendLoading(false);
     }
@@ -75,7 +77,7 @@ export default function ConfirmationPage() {
                 Check your email
               </CardTitle>
               <CardDescription className="text-center text-gray-600">
-                We've sent you a verification link
+                We&apos;ve sent you a verification link
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-center">
@@ -99,7 +101,7 @@ export default function ConfirmationPage() {
 
               {email ? (
                 <p className="text-gray-700">
-                  We've sent a verification link to{" "}
+                  We&apos;ve sent a verification link to{" "}
                   <span className="font-medium">{email}</span>. Please check
                   your email inbox and click on the link to complete your
                   registration.
@@ -112,8 +114,8 @@ export default function ConfirmationPage() {
               )}
 
               <p className="text-sm text-gray-500 mt-4">
-                If you don't see the email, check your spam folder or try again
-                in a few minutes.
+                If you don&apos;t see the email, check your spam folder or try
+                again in a few minutes.
               </p>
 
               {resendStatus && (

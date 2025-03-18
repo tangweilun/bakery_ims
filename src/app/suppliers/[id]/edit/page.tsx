@@ -97,12 +97,14 @@ export default function EditSupplier({ params }: { params: { id: string } }) {
           address: supplier.address || "",
           notes: supplier.notes || "",
         });
-      } catch (error: any) {
-        console.error("Error fetching supplier:", error);
-        setError(
-          error.message ||
-            "Failed to load supplier information. Please try again."
-        );
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error("Error fetching supplier:", error);
+          setError(
+            error.message ||
+              "Failed to load supplier information. Please try again."
+          );
+        }
       } finally {
         setIsLoading(false);
       }
@@ -139,12 +141,14 @@ export default function EditSupplier({ params }: { params: { id: string } }) {
       // Redirect back to suppliers list on success
       router.push("/suppliers");
       router.refresh();
-    } catch (error: any) {
-      console.error("Error updating supplier:", error);
-      setError(
-        error.message ||
-          "An error occurred while updating the supplier. Please try again."
-      );
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error updating supplier:", error);
+        setError(
+          error.message ||
+            "An error occurred while updating the supplier. Please try again."
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }

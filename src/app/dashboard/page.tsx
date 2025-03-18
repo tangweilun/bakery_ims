@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,10 +8,8 @@ import {
 } from "@/components/ui/card";
 import { Overview } from "@/components/overview";
 import { RecentActivity } from "@/components/recent-activity";
-import { Search } from "@/components/search";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { CalendarDateRangePicker } from "@/components/date-range-picker";
 import { ExpiringIngredients } from "@/components/expiring-ingredients";
 import { Package, AlertTriangle, Clock, BookOpen } from "lucide-react";
 

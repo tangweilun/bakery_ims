@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -62,7 +61,6 @@ export default function ManageSuppliers() {
   const [viewDialogOpen, setViewDialogOpen] = useState<boolean>(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [supplierToDelete, setSupplierToDelete] = useState<number | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchSuppliers = async () => {

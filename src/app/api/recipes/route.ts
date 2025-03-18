@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 
+// Define type for recipe ingredient
+interface RecipeIngredient {
+  ingredientId: string;
+  quantity: number;
+}
+
 // GET /api/recipes - Get all recipes
 export async function GET() {
   try {
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
       // Create recipe ingredients
       if (recipeIngredients && recipeIngredients.length > 0) {
         await tx.recipeIngredient.createMany({
-          data: recipeIngredients.map((item: any) => ({
+          data: recipeIngredients.map((item: RecipeIngredient) => ({
             recipeId: recipe.id,
             ingredientId: item.ingredientId,
             quantity: item.quantity,

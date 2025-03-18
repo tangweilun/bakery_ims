@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { Search } from "@/components/search";
+
 import Link from "next/link";
 import { PlusCircle, Filter, ArrowUpDown } from "lucide-react";
 
