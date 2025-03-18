@@ -146,7 +146,7 @@ export default function EditIngredientPage({
     if (ingredientId) {
       fetchIngredient();
     }
-  }, [ingredientId, router]);
+  }, [ingredientId, router, supabase.auth]);
 
   // Handle form input changes
   const handleChange = (
@@ -208,10 +208,12 @@ export default function EditIngredientPage({
 
       // Redirect to manage ingredient page
       router.push(`/ingredients`);
-    } catch (err: any) {
-      setError(err.message);
-      setSaving(false);
-      toast.error(`Error: ${err.message}`);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+        setSaving(false);
+        toast.error(`Error: ${err.message}`);
+      }
     }
   };
 
