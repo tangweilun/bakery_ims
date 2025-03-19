@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
+import { Prisma } from "@prisma/client";
 
 export async function GET(
   request: NextRequest,
@@ -60,11 +61,9 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (!data?.user) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -72,15 +71,14 @@ export async function PATCH(
     }
 
     const userData = await prisma.user.findUnique({
-      where: { email: user.email! },
+      where: { email: data.user.email! },
     });
 
     if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const id = parseInt(params.id);
-
+    const id = parseInt(params.id, 10);
     if (isNaN(id)) {
       return NextResponse.json({ error: "Invalid batch ID" }, { status: 400 });
     }
@@ -88,8 +86,8 @@ export async function PATCH(
     const body = await request.json();
     const { expiryDate, location, notes } = body;
 
-    // Only allow updating certain fields
-    const updateData: any = {};
+    // Strict type for updateData
+    const updateData: Partial<Prisma.BatchUpdateInput> = {};
 
     if (expiryDate !== undefined) {
       updateData.expiryDate = expiryDate ? new Date(expiryDate) : null;
@@ -104,7 +102,7 @@ export async function PATCH(
     }
 
     // Update batch and log activity within a transaction
-    const updatedBatch = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       const batch = await tx.batch.update({
         where: { id },
         data: updateData,

@@ -14,7 +14,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -85,6 +84,7 @@ export default function BatchesPage() {
         setIngredients(ingredientsData);
       } catch (error) {
         console.error("Error fetching data:", error);
+        toast.error("Error fetching data");
       } finally {
         setIsLoading(false);
       }

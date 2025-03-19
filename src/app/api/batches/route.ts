@@ -3,54 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Get query parameters for filtering
-    const searchParams = request.nextUrl.searchParams;
-    const ingredientId = searchParams.get("ingredientId");
-    const expiryStatus = searchParams.get("expiryStatus");
-
-    // Build the where condition for the query
-    const where: any = {};
-
-    if (ingredientId) {
-      where.ingredientId = parseInt(ingredientId);
-    }
-
-    // Handle expiry status filtering
-    if (expiryStatus) {
-      const today = new Date();
-
-      switch (expiryStatus) {
-        case "expired":
-          where.expiryDate = {
-            lt: today,
-          };
-          break;
-        case "expiringSoon":
-          const sevenDaysFromNow = new Date();
-          sevenDaysFromNow.setDate(today.getDate() + 7);
-          where.expiryDate = {
-            gte: today,
-            lt: sevenDaysFromNow,
-          };
-          break;
-        case "active":
-          const sevenDaysFromNowActive = new Date();
-          sevenDaysFromNowActive.setDate(today.getDate() + 7);
-          where.expiryDate = {
-            gte: sevenDaysFromNowActive,
-          };
-          break;
-        case "noExpiry":
-          where.expiryDate = null;
-          break;
-      }
-    }
-
     // Fetch batches with ingredient details
     const batches = await prisma.batch.findMany({
-      where,
       include: {
         ingredient: {
           select: {
