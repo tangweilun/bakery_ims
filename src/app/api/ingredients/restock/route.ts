@@ -122,7 +122,7 @@ export async function GET(
 ) {
   try {
     // Properly await params before using them
-    const { id } = await context.params;
+    const { id } = context.params;
     const ingredientId = parseInt(id);
 
     if (isNaN(ingredientId)) {

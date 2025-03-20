@@ -1,13 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 // GET /api/recipes/[id]/ingredients - Get ingredients for a recipe
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function GET(context: { params: { id: string } }) {
   try {
-    const { id } = await context.params;
+    const { id } = context.params;
     const recipeId = parseInt(id);
     if (isNaN(recipeId)) {
       return NextResponse.json({ error: "Invalid recipe ID" }, { status: 400 });

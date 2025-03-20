@@ -9,7 +9,7 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = context.params;
     const recipeId = parseInt(id);
     if (isNaN(recipeId)) {
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
@@ -57,7 +57,7 @@ export async function PATCH(
         { status: 401 }
       );
     }
-    const { id } = await context.params;
+    const { id } = context.params;
     const recipeId = parseInt(id);
 
     if (isNaN(recipeId)) {
@@ -167,7 +167,7 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = context.params;
     const recipeId = parseInt(id);
     // Create Supabase server client
     const supabase = await createClient();

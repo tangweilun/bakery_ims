@@ -20,7 +20,7 @@ export async function GET(
 ) {
   try {
     // Properly await params before using them
-    const { id } = await context.params;
+    const { id } = context.params;
     const supplierId = parseInt(id);
 
     if (isNaN(supplierId)) {
@@ -58,7 +58,7 @@ export async function PUT(
 ) {
   try {
     // Properly await params before using them
-    const { id } = await context.params;
+    const { id } = context.params;
     const supplierId = parseInt(id);
 
     if (isNaN(supplierId)) {
@@ -125,7 +125,7 @@ export async function DELETE(
 ) {
   try {
     // Properly await params before using them
-    const { id } = await context.params;
+    const { id } = context.params;
     const supplierId = parseInt(id);
 
     if (isNaN(supplierId)) {

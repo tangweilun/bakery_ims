@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity } from "@/types/activity";
+import { toast } from "react-toastify";
 
 /**
  * Generates a summary string based on the activity's action and details.
@@ -85,6 +86,7 @@ export function RecentActivity() {
         const data = await response.json();
         setActivities(data);
       } catch (error) {
+        toast.error("Failed to fetch activities");
         console.error("Failed to fetch activities:", error);
       } finally {
         setLoading(false); // Set loading to false after fetching
