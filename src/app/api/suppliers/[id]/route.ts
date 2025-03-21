@@ -121,11 +121,12 @@ export async function PUT(
 // DELETE handler to delete a supplier
 export async function DELETE(
   _request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // Properly await params before using them
-    const { id } = context.params;
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
     const supplierId = parseInt(id);
 
     if (isNaN(supplierId)) {

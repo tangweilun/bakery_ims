@@ -59,7 +59,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -79,9 +79,10 @@ export async function PATCH(
     if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
-    const id = parseInt(params.id, 10);
-    if (isNaN(id)) {
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
+    const batchId = parseInt(id);
+    if (isNaN(batchId)) {
       return NextResponse.json({ error: "Invalid batch ID" }, { status: 400 });
     }
 
@@ -106,7 +107,7 @@ export async function PATCH(
     // Update batch and log activity within a transaction
     await prisma.$transaction(async (tx) => {
       const batch = await tx.batch.update({
-        where: { id },
+        where: { id: batchId },
         data: updateData,
         include: {
           ingredient: true,
@@ -130,7 +131,7 @@ export async function PATCH(
 
     // Return updated batch with ingredient details
     const batchWithIngredient = await prisma.batch.findUnique({
-      where: { id },
+      where: { id: batchId },
       include: {
         ingredient: {
           select: {

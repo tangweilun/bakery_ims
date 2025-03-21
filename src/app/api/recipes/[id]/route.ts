@@ -6,10 +6,11 @@ import { prisma } from "@/lib/prisma";
 // GET /api/recipes/[id] - Get recipe by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
     const recipeId = parseInt(id);
     if (isNaN(recipeId)) {
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
@@ -43,7 +44,7 @@ export async function GET(
 // PATCH /api/recipes/[id] - Update recipe
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -57,7 +58,8 @@ export async function PATCH(
         { status: 401 }
       );
     }
-    const id = params.id;
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
     const recipeId = parseInt(id);
 
     if (isNaN(recipeId)) {
