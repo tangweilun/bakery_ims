@@ -4,16 +4,21 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { Prisma } from "@prisma/client";
 
-export async function GET({ params }: { params: { id: string } }) {
+export async function GET(
+  _: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = parseInt(params.id);
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
+    const batchId = parseInt(id);
 
-    if (isNaN(id)) {
+    if (isNaN(batchId)) {
       return NextResponse.json({ error: "Invalid batch ID" }, { status: 400 });
     }
 
     const batch = await prisma.batch.findUnique({
-      where: { id },
+      where: { id: batchId },
       include: {
         ingredient: {
           select: {

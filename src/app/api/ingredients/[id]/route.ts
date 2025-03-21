@@ -6,10 +6,11 @@ import { Prisma } from "@prisma/client";
 // PATCH update an ingredient
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params;
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
     const ingredientId = parseInt(id);
 
     const data = await request.json();

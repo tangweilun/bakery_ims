@@ -16,11 +16,11 @@ const supplierSchema = z.object({
 // GET handler to fetch a single supplier
 export async function GET(
   _request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Properly await params before using them
-    const { id } = context.params;
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
     const supplierId = parseInt(id);
 
     if (isNaN(supplierId)) {
@@ -54,11 +54,11 @@ export async function GET(
 // PUT handler to update supplier
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Properly await params before using them
-    const { id } = context.params;
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
     const supplierId = parseInt(id);
 
     if (isNaN(supplierId)) {
