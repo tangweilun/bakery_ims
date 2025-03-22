@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { Batch } from "@prisma/client";
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       notes,
       ingredients = [], // New structure from request
     } = body;
-    
+
     console.log("recipeId:", recipeId);
     console.log("quantity:", quantity);
     console.log("notes:", notes);
@@ -41,12 +41,47 @@ export async function POST(req: Request) {
       );
     }
 
-    // Transform ingredients into the needed format
-    const ingredientUsage = ingredients.map((ingredient) => ({
-      ingredientId: ingredient.id,
-      quantity: 1, // Default usage quantity per ingredient
-      reason: "Production",
-    }));
+    //get recipes requrie ingredient
+    // Fetch the recipe with its required ingredients
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: Number(recipeId) },
+      include: {
+        recipeIngredients: {
+          include: { ingredient: true },
+        },
+      },
+    });
+
+    if (!recipe) {
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
+    // Transform ingredients into the needed format based on recipe quantities
+    const ingredientUsage = ingredients.map((ingredient) => {
+      // Find this ingredient's requirement in the recipe
+      const recipeIngredient = recipe.recipeIngredients.find(
+        (ri) => ri.ingredientId === Number(ingredient.id)
+      );
+
+      // If not found in recipe or no required quantity, default to 0
+      const requiredQuantityPerUnit = recipeIngredient?.quantity || 0;
+
+      // Calculate total needed based on production quantity
+      const totalQuantityNeeded = requiredQuantityPerUnit * Number(quantity);
+
+      return {
+        ingredientId: ingredient.id,
+        quantity: totalQuantityNeeded,
+        reason: "Production",
+      };
+    });
+
+    // // Transform ingredients into the needed format
+    // const ingredientUsage = ingredients.map((ingredient) => ({
+    //   ingredientId: ingredient.id,
+    //   quantity: Number(quantity), // Default usage quantity per ingredient
+    //   reason: "Production",
+    // }));
     console.log("ingredientUsage:", JSON.stringify(ingredientUsage, null, 2));
 
     const wastageRecords = ingredients
@@ -104,7 +139,7 @@ export async function POST(req: Request) {
       },
     });
     console.log("ingredientsRecords count:", ingredientsRecords.length);
-    
+
     // Calculate total quantity needed for each ingredient (usage + wastage)
     const stockShortages: any[] = [];
     const totalUsageMap = new Map();
@@ -121,10 +156,12 @@ export async function POST(req: Request) {
 
     // Check if we have enough stock for all ingredients
     for (const ingredient of ingredientsRecords) {
-      console.log(`Processing ingredient ${ingredient.id} (${ingredient.name})`);
+      console.log(
+        `Processing ingredient ${ingredient.id} (${ingredient.name})`
+      );
       const totalNeeded = totalUsageMap.get(ingredient.id) || 0;
       console.log(`Total needed for ${ingredient.name}: ${totalNeeded}`);
-      
+
       const totalAvailable = ingredient.batches.reduce(
         (sum: number, batch: { remainingQuantity: number }) =>
           sum + batch.remainingQuantity,
@@ -171,7 +208,7 @@ export async function POST(req: Request) {
       // Process ingredient usage with improved FIFO batch deduction
       for (const usage of ingredientUsage) {
         console.log(`Processing usage for ingredient ${usage.ingredientId}`);
-        
+
         // Create usage record
         const usageRecord = await tx.usageRecord.create({
           data: {
@@ -212,7 +249,9 @@ export async function POST(req: Request) {
             batch.remainingQuantity,
             remainingToDeduct
           );
-          console.log(`Deducting ${deductFromBatch} from batch ${batch.id} (remaining: ${batch.remainingQuantity})`);
+          console.log(
+            `Deducting ${deductFromBatch} from batch ${batch.id} (remaining: ${batch.remainingQuantity})`
+          );
 
           // Update the batch's remaining quantity
           await tx.batch.update({
@@ -241,7 +280,9 @@ export async function POST(req: Request) {
 
         // Ensure we've deducted everything
         if (remainingToDeduct > 0) {
-          console.log(`Error: Could not deduct full quantity for ingredient ${ingredient.name}`);
+          console.log(
+            `Error: Could not deduct full quantity for ingredient ${ingredient.name}`
+          );
           throw new Error(
             `Unexpected error: Could not deduct full quantity for ingredient ${ingredient.name}`
           );
@@ -374,6 +415,145 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         message: "Error processing production",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    console.log("Starting yield history API GET request");
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    // Parse URL to get query parameters
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const recipeId = searchParams.get("recipeId");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") || "desc";
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Build where clause based on filters
+    const where: any = {};
+
+    if (recipeId) {
+      where.recipeId = parseInt(recipeId);
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+
+      if (endDate) {
+        // Add one day to include the end date fully
+        const endDateObj = new Date(endDate);
+        endDateObj.setDate(endDateObj.getDate() + 1);
+        where.createdAt.lt = endDateObj;
+      }
+    }
+
+    // Get total count for pagination
+    const totalCount = await prisma.productionRecord.count({ where });
+
+    // Fetch production records with related data
+    const records = await prisma.productionRecord.findMany({
+      where,
+      include: {
+        recipe: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        usageRecords: {
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+      skip,
+      take: limit,
+    });
+
+    // Group usage records by production record
+    const formattedRecords = records.map((record) => {
+      // Group usage records by reason
+      const ingredientUsage = record.usageRecords.filter(
+        (usage) => usage.reason === "Production"
+      );
+
+      const wastage = record.usageRecords.filter((usage) =>
+        usage.reason.includes("wastage")
+      );
+
+      return {
+        id: record.id,
+        recipeId: record.recipeId,
+        recipeName: record.recipe.name,
+        quantity: record.quantity,
+        batchNumber: record.batchNumber,
+        notes: record.notes,
+        createdAt: record.createdAt,
+        userId: record.userId,
+        userName: record.user.name,
+        userEmail: record.user.email,
+        ingredients: ingredientUsage.map((usage) => ({
+          id: usage.ingredientId,
+          name: usage.ingredient.name,
+          quantity: usage.quantity,
+          unit: usage.ingredient.unit,
+        })),
+        wastage: wastage.map((usage) => ({
+          id: usage.ingredientId,
+          name: usage.ingredient.name,
+          quantity: usage.quantity,
+          unit: usage.ingredient.unit,
+        })),
+      };
+    });
+
+    return NextResponse.json(
+      {
+        records: formattedRecords,
+        pagination: {
+          total: totalCount,
+          page,
+          limit,
+          pages: Math.ceil(totalCount / limit),
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching yield history:", error);
+    return NextResponse.json(
+      {
+        message: "Error fetching production records",
         error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
