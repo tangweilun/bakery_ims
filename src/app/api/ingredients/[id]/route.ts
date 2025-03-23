@@ -113,11 +113,12 @@ export async function PATCH(
 // DELETE an ingredient (isActive false since cascade deleting is not approiate)
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params; // Ensure params is awaited before using it
-    const ingredientId = parseInt(id, 10); // Convert ID to integer
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
+    const ingredientId = parseInt(id);
 
     const supabase = await createClient();
     const {
@@ -188,11 +189,11 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Properly await params before using them
-    const { id } = context.params;
+    const params = await context.params; // Await the params Promise
+    const { id } = params; // Now safely destructure id
     const ingredientId = parseInt(id);
 
     if (isNaN(ingredientId)) {
