@@ -163,11 +163,11 @@ export default function PurchaseIngredientPage() {
     }, 2000);
   };
 
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
-  };
+  // const handleDateSelect = (selectedDate: Date | undefined) => {
+  //   if (selectedDate) {
+  //     setDate(selectedDate);
+  //   }
+  // };
 
   return (
     <div className="flex min-h-screen flex-col">
