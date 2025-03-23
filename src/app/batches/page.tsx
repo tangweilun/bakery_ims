@@ -617,17 +617,19 @@ export default function BatchesPage() {
                 Are you sure you want to delete batch{" "}
                 <span className="font-semibold">
                   {batchToDelete?.batchNumber}
-                </span>
+                </span>{" "}
                 of{" "}
                 <span className="font-semibold">
                   {batchToDelete?.ingredient.name}
                 </span>
                 ?
-                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
-                  This action cannot be undone. This will permanently delete the
-                  batch and all associated records.
-                </div>
               </AlertDialogDescription>
+              {/* Moved the warning div outside of AlertDialogDescription */}
+              <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
+                This action cannot be undone. This will permanently delete the
+                batch. The delete action only can be done when there is no
+                associated usage record.
+              </div>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
