@@ -131,7 +131,7 @@ export default function AddIngredientForm() {
       const formattedData = {
         ...formData,
         supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
-        currentStock: parseFloat(formData.currentStock),
+        currentStock: 0.0,
         minimumStock: parseFloat(formData.minimumStock),
         idealStock: parseFloat(formData.idealStock),
         cost: parseFloat(formData.cost),
@@ -296,7 +296,7 @@ export default function AddIngredientForm() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="currentStock">
                     Current Stock <span className="text-red-500">*</span>
                   </Label>
@@ -311,7 +311,7 @@ export default function AddIngredientForm() {
                     placeholder="0.00"
                     required
                   />
-                </div>
+                </div> */}
 
                 <div className="space-y-2">
                   <Label htmlFor="minimumStock">Minimum Stock Level</Label>
