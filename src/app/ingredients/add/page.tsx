@@ -1,11 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Loader2, ArrowLeft } from "lucide-react";
 
 type Supplier = {
   id: number;
@@ -28,7 +48,7 @@ export default function AddIngredientForm() {
     cost: "0",
     supplierId: "",
     location: "",
-    expiryDate: "",
+    expiryDate: null as Date | null,
   });
 
   const isFormValid = () => {
@@ -83,6 +103,14 @@ export default function AddIngredientForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChange = (date: Date | null) => {
+    setFormData((prev) => ({ ...prev, expiryDate: date }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -95,21 +123,25 @@ export default function AddIngredientForm() {
         return;
       }
 
+      // Format the date properly if it exists
+      const formattedData = {
+        ...formData,
+        supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
+        currentStock: parseFloat(formData.currentStock),
+        minimumStock: parseFloat(formData.minimumStock),
+        idealStock: parseFloat(formData.idealStock),
+        cost: parseFloat(formData.cost),
+        expiryDate: formData.expiryDate
+          ? formData.expiryDate.toISOString()
+          : null,
+      };
+
       const response = await fetch("/api/ingredients", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...formData,
-          supplierId: formData.supplierId
-            ? parseInt(formData.supplierId)
-            : null,
-          currentStock: parseFloat(formData.currentStock),
-          minimumStock: parseFloat(formData.minimumStock),
-          idealStock: parseFloat(formData.idealStock),
-          cost: parseFloat(formData.cost),
-        }),
+        body: JSON.stringify(formattedData),
       });
 
       if (!response.ok) {
@@ -132,11 +164,11 @@ export default function AddIngredientForm() {
         cost: "0",
         supplierId: "",
         location: "",
-        expiryDate: "",
+        expiryDate: null,
       });
 
-      // Refresh data
-      router.refresh();
+      // Redirect to ingredients list
+      router.push("/ingredients");
     } catch (err) {
       if (err instanceof Error) {
         toast.error(err.message || "Failed to add ingredient");
@@ -147,10 +179,8 @@ export default function AddIngredientForm() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      <ToastContainer position="bottom-right" />
-
-      <div className="border-b bg-white shadow-sm">
+    <div className="flex min-h-screen flex-col">
+      <div className="border-b">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
@@ -158,262 +188,252 @@ export default function AddIngredientForm() {
           </div>
         </div>
       </div>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Add New Ingredient</h1>
+          <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+        </div>
 
-      <div className="container mx-auto py-8 px-4">
-        <div className="bg-white p-8 rounded-lg shadow-md border border-gray-100">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">
-            Add New Ingredient
-          </h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Ingredient Details</CardTitle>
+            <CardDescription>
+              Enter the details for the new ingredient. Fields marked with * are
+              required.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter ingredient name"
+                    required
+                  />
+                </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  required
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">
+                    Category <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) =>
+                      handleSelectChange("category", value)
+                    }
+                  >
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Dry Goods">Dry Goods</SelectItem>
+                      <SelectItem value="Dairy">Dairy</SelectItem>
+                      <SelectItem value="Spices">Spices</SelectItem>
+                      <SelectItem value="Fruit">Fruit</SelectItem>
+                      <SelectItem value="Nuts">Nuts</SelectItem>
+                      <SelectItem value="Sweeteners">Sweeteners</SelectItem>
+                      <SelectItem value="Flavorings">Flavorings</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  <option value="Dry Goods">Dry Goods</option>
-                  <option value="Dairy">Dairy</option>
-                  <option value="Spices">Spices</option>
-                  <option value="Fruit">Fruit</option>
-                  <option value="Nuts">Nuts</option>
-                  <option value="Sweeteners">Sweeteners</option>
-                  <option value="Flavorings">Flavorings</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="unit">
+                    Unit <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={formData.unit}
+                    onValueChange={(value) => handleSelectChange("unit", value)}
+                  >
+                    <SelectTrigger id="unit">
+                      <SelectValue placeholder="Select Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                      <SelectItem value="g">Grams (g)</SelectItem>
+                      <SelectItem value="l">Liters (l)</SelectItem>
+                      <SelectItem value="ml">Milliliters (ml)</SelectItem>
+                      <SelectItem value="pcs">Pieces (pcs)</SelectItem>
+                      <SelectItem value="dozen">Dozen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Unit <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  required
-                >
-                  <option value="">Select Unit</option>
-                  <option value="kg">Kilograms (kg)</option>
-                  <option value="g">Grams (g)</option>
-                  <option value="l">Liters (l)</option>
-                  <option value="ml">Milliliters (ml)</option>
-                  <option value="pcs">Pieces (pcs)</option>
-                  <option value="dozen">Dozen</option>
-                </select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cost">
+                    Cost per Unit <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                      $
+                    </span>
+                    <Input
+                      id="cost"
+                      name="cost"
+                      type="number"
+                      value={formData.cost}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      className="pl-8"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                </div>
 
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Cost per Unit <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                    $
-                  </span>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="currentStock">
+                    Current Stock <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="currentStock"
+                    name="currentStock"
                     type="number"
-                    name="cost"
-                    value={formData.cost}
+                    value={formData.currentStock}
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    className="w-full p-2 pl-8 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    placeholder="0.00"
                     required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="minimumStock">Minimum Stock Level</Label>
+                  <Input
+                    id="minimumStock"
+                    name="minimumStock"
+                    type="number"
+                    value={formData.minimumStock}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="idealStock">Ideal Stock Level</Label>
+                  <Input
+                    id="idealStock"
+                    name="idealStock"
+                    type="number"
+                    value={formData.idealStock}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="supplier">Supplier</Label>
+                  {suppliers && suppliers.length > 0 ? (
+                    <Select
+                      value={formData.supplierId}
+                      onValueChange={(value) =>
+                        handleSelectChange("supplierId", value)
+                      }
+                    >
+                      <SelectTrigger id="supplier">
+                        <SelectValue placeholder="Select Supplier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.map((supplier) => (
+                          <SelectItem
+                            key={supplier.id}
+                            value={supplier.id.toString()}
+                          >
+                            {supplier.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="flex flex-col space-y-2">
+                      <div className="text-gray-500 italic">
+                        No suppliers available
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => router.push("/suppliers/add")}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Add Supplier
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="location">Storage Location</Label>
+                  <Input
+                    id="location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="Enter storage location"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expiryDate">
+                    Expiry Date (if applicable)
+                  </Label>
+                  <DatePicker
+                    date={formData.expiryDate}
+                    setDate={handleDateChange}
+                    className="w-full"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Current Stock <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="currentStock"
-                  value={formData.currentStock}
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
                   onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  required
+                  placeholder="Enter a description for this ingredient"
+                  rows={3}
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Minimum Stock Level
-                </label>
-                <input
-                  type="number"
-                  name="minimumStock"
-                  value={formData.minimumStock}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
+              <div className="flex justify-end pt-4 space-x-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading || !isFormValid()}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Add Ingredient"
+                  )}
+                </Button>
               </div>
-
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Ideal Stock Level
-                </label>
-                <input
-                  type="number"
-                  name="idealStock"
-                  value={formData.idealStock}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Supplier
-                </label>
-                {suppliers && suppliers.length > 0 ? (
-                  <select
-                    name="supplierId"
-                    value={formData.supplierId}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  >
-                    <option value="">Select Supplier</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="flex flex-col space-y-2">
-                    <div className="text-gray-500 italic">
-                      No suppliers available
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => router.push("/suppliers/add")}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm transition-colors"
-                    >
-                      Add Supplier
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Storage Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block font-medium text-gray-700">
-                  Expiry Date (if applicable)
-                </label>
-                <input
-                  type="date"
-                  name="expiryDate"
-                  value={formData.expiryDate}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block font-medium text-gray-700">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                rows={3}
-              ></textarea>
-            </div>
-
-            <div className="flex items-center justify-end space-x-4 pt-4 border-t">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                className={`px-6 py-2 rounded-md text-white transition-all ${
-                  isLoading || !isFormValid()
-                    ? "bg-blue-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg"
-                }`}
-                disabled={isLoading || !isFormValid()}
-              >
-                {isLoading ? (
-                  <span className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Adding...
-                  </span>
-                ) : (
-                  "Add Ingredient"
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
