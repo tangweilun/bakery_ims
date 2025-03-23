@@ -467,7 +467,7 @@ export async function GET(req: NextRequest) {
     const endDate = searchParams.get("endDate");
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
-
+    const batchNumber = searchParams.get("batchNumber");
     // Calculate pagination
     const skip = (page - 1) * limit;
 
@@ -491,7 +491,12 @@ export async function GET(req: NextRequest) {
         where.createdAt.lt = endDateObj;
       }
     }
-
+    // Add batch number filter
+    if (batchNumber) {
+      where.batchNumbers = {
+        has: batchNumber,
+      };
+    }
     // Get total count for pagination
     const totalCount = await prisma.productionRecord.count({ where });
 

@@ -107,7 +107,7 @@ export function RecentActivity() {
         <div key={activity.id}>
           <div className="flex items-center">
             <Avatar className="h-9 w-9">
-              <AvatarImage src="/placeholder.svg" alt="Avatar" />
+              <AvatarImage src="/avatars.jpeg" alt="Avatar" />
               <AvatarFallback>{activity.user.name?.[0] || "U"}</AvatarFallback>
             </Avatar>
             <div className="ml-4 space-y-1">

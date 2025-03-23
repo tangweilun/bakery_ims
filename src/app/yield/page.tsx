@@ -338,13 +338,30 @@ export default function YieldManagementPage() {
         {/* Submit Button */}
         <div className="flex justify-end">
           <button
-            className={`bg-black text-white px-4 py-2 rounded-lg ${
-              isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-            }`}
+            className={`bg-black text-white px-4 py-2 rounded-lg transition 
+    ${
+      isSubmitting ||
+      isLoadingDetails ||
+      isLoadingRecipes ||
+      !selectedRecipeId ||
+      ingredients.length === 0
+        ? "opacity-70 cursor-not-allowed"
+        : "hover:bg-gray-800"
+    }`}
             onClick={handleUpdateStock}
-            disabled={isSubmitting || isLoadingDetails || !selectedRecipeId}
+            disabled={
+              isSubmitting ||
+              isLoadingDetails ||
+              isLoadingRecipes ||
+              !selectedRecipeId ||
+              ingredients.length === 0
+            }
           >
-            {isSubmitting ? "Updating..." : "Update Stock"}
+            {isSubmitting
+              ? "Uploading..."
+              : isLoadingDetails || isLoadingRecipes
+              ? "Loading..."
+              : "Update Stock"}
           </button>
         </div>
       </div>

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -53,7 +54,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CalendarIcon, ArrowUpDown, RefreshCw, FileDown } from "lucide-react";
+// Import the ArrowLeft icon
+import {
+  CalendarIcon,
+  ArrowUpDown,
+  RefreshCw,
+  FileDown,
+  ArrowLeft,
+} from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import { MainNav } from "@/components/main-nav";
 
@@ -109,6 +117,7 @@ export default function YieldHistoryPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [batchNumber, setBatchNumber] = useState<string>("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -127,6 +136,7 @@ export default function YieldHistoryPage() {
         const end =
           searchParams.get("endDate") ||
           (endDate ? format(endDate, "yyyy-MM-dd") : "");
+        const batch = searchParams.get("batchNumber") || batchNumber;
         const sort = searchParams.get("sortBy") || sortBy;
         const order = searchParams.get("sortOrder") || sortOrder;
 
@@ -137,6 +147,7 @@ export default function YieldHistoryPage() {
         if (recipeId) queryParams.set("recipeId", recipeId);
         if (start) queryParams.set("startDate", start);
         if (end) queryParams.set("endDate", end);
+        if (batch) queryParams.set("batchNumber", batch);
         queryParams.set("sortBy", sort);
         queryParams.set("sortOrder", order);
 
@@ -160,6 +171,9 @@ export default function YieldHistoryPage() {
         }
         if (searchParams.get("endDate")) {
           setEndDate(end ? new Date(end) : null);
+        }
+        if (searchParams.get("batchNumber")) {
+          setBatchNumber(batch);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -201,6 +215,11 @@ export default function YieldHistoryPage() {
     }
     if (startDate) params.set("startDate", format(startDate, "yyyy-MM-dd"));
     if (endDate) params.set("endDate", format(endDate, "yyyy-MM-dd"));
+    if (batchNumber.trim()) {
+      params.set("batchNumber", batchNumber.trim());
+    } else {
+      params.delete("batchNumber");
+    }
     params.set("sortBy", sortBy);
     params.set("sortOrder", sortOrder);
 
@@ -212,9 +231,10 @@ export default function YieldHistoryPage() {
     setSelectedRecipe(null);
     setStartDate(null);
     setEndDate(null);
+    setBatchNumber("");
     setSortBy("createdAt");
     setSortOrder("desc");
-    router.push("/yield/history?page=1&sortBy=createdAt&sortOrder=desc"); // Remove `startDate` and `endDate`
+    router.push("/yield/history?page=1&sortBy=createdAt&sortOrder=desc");
   };
 
   // Toggle sort
@@ -258,8 +278,8 @@ export default function YieldHistoryPage() {
       record.id,
       record.recipeName,
       record.quantity,
-      Array.isArray(record.batchNumbers) 
-        ? record.batchNumbers.join(", ") 
+      Array.isArray(record.batchNumbers)
+        ? record.batchNumbers.join(", ")
         : record.batchNumbers,
       format(new Date(record.createdAt), "yyyy-MM-dd HH:mm"),
       record.userName || record.userEmail,
@@ -301,6 +321,19 @@ export default function YieldHistoryPage() {
         </div>
       </div>
       <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/yield")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Yield Management
+            </Button>
+          </div>
+        </div>
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Production History</CardTitle>
@@ -309,7 +342,7 @@ export default function YieldHistoryPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="recipe">Recipe</Label>
                 <Select
@@ -328,6 +361,16 @@ export default function YieldHistoryPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="batchNumber">Batch Number</Label>
+                <Input
+                  id="batchNumber"
+                  placeholder="Enter batch number"
+                  value={batchNumber}
+                  onChange={(e) => setBatchNumber(e.target.value)}
+                />
               </div>
 
               <div className="space-y-2">
@@ -427,15 +470,7 @@ export default function YieldHistoryPage() {
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         </Button>
                       </TableHead>
-                      <TableHead>
-                        <Button
-                          variant="ghost"
-                          onClick={() => toggleSort("recipeName")}
-                        >
-                          Recipe
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </TableHead>
+                      <TableHead>Recipe</TableHead>
                       <TableHead>
                         <Button
                           variant="ghost"
@@ -478,14 +513,18 @@ export default function YieldHistoryPage() {
                             {Array.isArray(record.batchNumbers) ? (
                               record.batchNumbers.length > 0 ? (
                                 <div className="max-h-20 overflow-y-auto">
-                                  {record.batchNumbers.map((batchNumber, index) => (
-                                    <div key={index} className="text-sm mb-1">
-                                      {batchNumber}
-                                    </div>
-                                  ))}
+                                  {record.batchNumbers.map(
+                                    (batchNumber, index) => (
+                                      <div key={index} className="text-sm mb-1">
+                                        {batchNumber}
+                                      </div>
+                                    )
+                                  )}
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground text-sm">No batch numbers</span>
+                                <span className="text-muted-foreground text-sm">
+                                  No batch numbers
+                                </span>
                               )
                             ) : (
                               record.batchNumbers
