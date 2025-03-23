@@ -54,13 +54,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CalendarIcon, ArrowUpDown, RefreshCw, FileDown } from "lucide-react";
+import { UserNav } from "@/components/user-nav";
+import { MainNav } from "@/components/main-nav";
 
 type ProductionRecord = {
   id: number;
   recipeId: number;
   recipeName: string;
   quantity: number;
-  batchNumber: string;
+  batchNumbers: string[] | [];
   notes: string | null;
   createdAt: string;
   userId: string;
@@ -180,11 +182,6 @@ export default function YieldHistoryPage() {
         }
         const data = await response.json();
         setRecipes(data || []);
-        console.log("Recipes fetched:", data);
-        console.log(
-          "Recipes name",
-          data?.map((recipe: Recipe) => recipe.name) || []
-        );
       } catch (err) {
         console.error("Error fetching recipes:", err);
       }
@@ -217,7 +214,7 @@ export default function YieldHistoryPage() {
     setEndDate(null);
     setSortBy("createdAt");
     setSortOrder("desc");
-    router.push("");
+    router.push("/yield/history?page=1&sortBy=createdAt&sortOrder=desc"); // Remove `startDate` and `endDate`
   };
 
   // Toggle sort
@@ -251,7 +248,7 @@ export default function YieldHistoryPage() {
       "ID",
       "Recipe",
       "Quantity",
-      "Batch Number",
+      "Batch Numbers",
       "Created Date",
       "Created By",
       "Notes",
@@ -261,7 +258,9 @@ export default function YieldHistoryPage() {
       record.id,
       record.recipeName,
       record.quantity,
-      record.batchNumber,
+      Array.isArray(record.batchNumbers) 
+        ? record.batchNumbers.join(", ") 
+        : record.batchNumbers,
       format(new Date(record.createdAt), "yyyy-MM-dd HH:mm"),
       record.userName || record.userEmail,
       record.notes || "",
@@ -292,347 +291,387 @@ export default function YieldHistoryPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Production History</CardTitle>
-          <CardDescription>
-            View and filter your bakery production records
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="recipe">Recipe</Label>
-              <Select
-                value={selectedRecipe || "none"}
-                onValueChange={setSelectedRecipe}
-              >
-                <SelectTrigger id="recipe">
-                  <SelectValue placeholder="All recipes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">All recipes</SelectItem>
-                  {recipes.map((recipe) => (
-                    <SelectItem key={recipe.id} value={recipe.id.toString()}>
-                      {recipe.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                    id="startDate"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : "Pick a start date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={startDate || undefined}
-                    onSelect={(date: Date | undefined) =>
-                      setStartDate(date || null)
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                    id="endDate"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PPP") : "Pick an end date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={endDate || undefined}
-                    onSelect={(date: Date | undefined) =>
-                      setEndDate(date || null)
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+    <div className="flex min-h-screen flex-col">
+      <div className="border-b">
+        <div className="flex h-16 items-center px-4">
+          <MainNav className="mx-6" />
+          <div className="ml-auto flex items-center space-x-4">
+            <UserNav />
           </div>
-
-          <div className="flex justify-between mt-6">
-            <Button variant="outline" onClick={resetFilters}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Reset
-            </Button>
-            <div className="space-x-2">
-              <Button onClick={exportCSV} variant="outline">
-                <FileDown className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button onClick={applyFilters}>Apply Filters</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {loading ? (
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
         </div>
-      ) : error ? (
-        <Card className="bg-red-50">
-          <CardContent className="p-6">
-            <p className="text-red-600">{error}</p>
+      </div>
+      <div className="container mx-auto py-6">
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Production History</CardTitle>
+            <CardDescription>
+              View and filter your bakery production records
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="recipe">Recipe</Label>
+                <Select
+                  value={selectedRecipe || "none"}
+                  onValueChange={setSelectedRecipe}
+                >
+                  <SelectTrigger id="recipe">
+                    <SelectValue placeholder="All recipes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">All recipes</SelectItem>
+                    {recipes.map((recipe) => (
+                      <SelectItem key={recipe.id} value={recipe.id.toString()}>
+                        {recipe.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                      id="startDate"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate
+                        ? format(startDate, "PPP")
+                        : "Pick a start date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={startDate || undefined}
+                      onSelect={(date: Date | undefined) =>
+                        setStartDate(date || null)
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endDate">End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                      id="endDate"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "PPP") : "Pick an end date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={endDate || undefined}
+                      onSelect={(date: Date | undefined) =>
+                        setEndDate(date || null)
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-6">
+              <Button variant="outline" onClick={resetFilters}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reset
+              </Button>
+              <div className="space-x-2">
+                <Button onClick={exportCSV} variant="outline">
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
+                <Button onClick={applyFilters}>Apply Filters</Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <>
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      <Button variant="ghost" onClick={() => toggleSort("id")}>
-                        ID
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => toggleSort("recipeName")}
-                      >
-                        Recipe
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => toggleSort("quantity")}
-                      >
-                        Quantity
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>Batch Number</TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        onClick={() => toggleSort("createdAt")}
-                      >
-                        Date
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>Created By</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {records.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        No production records found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    records.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="font-medium">
-                          #{record.id}
-                        </TableCell>
-                        <TableCell>{record.recipeName}</TableCell>
-                        <TableCell>{record.quantity}</TableCell>
-                        <TableCell>{record.batchNumber}</TableCell>
-                        <TableCell>
-                          {format(new Date(record.createdAt), "MMM d, yyyy")}
-                          <br />
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(record.createdAt), "h:mm a")}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                {record.userName || "User"}
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {record.userEmail}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                        <TableCell>
-                          <Accordion
-                            type="single"
-                            collapsible
-                            className="w-full"
-                          >
-                            <AccordionItem value={`item-${record.id}`}>
-                              <AccordionTrigger className="py-2">
-                                View Details
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="space-y-4">
-                                  {record.notes && (
-                                    <div className="p-2 bg-slate-50 rounded-sm">
-                                      <p className="text-sm font-medium">
-                                        Notes:
-                                      </p>
-                                      <p className="text-sm">{record.notes}</p>
-                                    </div>
-                                  )}
 
-                                  <div>
-                                    <p className="text-sm font-medium mb-2">
-                                      Ingredients Used:
-                                    </p>
-                                    <ul className="space-y-1">
-                                      {record.ingredients.map((ingredient) => (
-                                        <li
-                                          key={ingredient.id}
-                                          className="text-sm"
-                                        >
-                                          {ingredient.name}:{" "}
-                                          {ingredient.quantity}{" "}
-                                          {ingredient.unit}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-
-                                  {record.wastage.length > 0 && (
-                                    <div>
-                                      <p className="text-sm font-medium mb-2">
-                                        Wastage:
-                                      </p>
-                                      <ul className="space-y-1">
-                                        {record.wastage.map((item) => (
-                                          <li key={item.id} className="text-sm">
-                                            {item.name}: {item.quantity}{" "}
-                                            {item.unit}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+        {loading ? (
+          <div className="flex justify-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+          </div>
+        ) : error ? (
+          <Card className="bg-red-50">
+            <CardContent className="p-6">
+              <p className="text-red-600">{error}</p>
             </CardContent>
           </Card>
-
-          <div className="mt-6">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      (
-                        e as React.MouseEvent<HTMLAnchorElement>
-                      ).preventDefault();
-                      if (pagination.page > 1) {
-                        goToPage(pagination.page - 1);
-                      }
-                    }}
-                    className={
-                      pagination.page <= 1
-                        ? "pointer-events-none opacity-50"
-                        : ""
-                    }
-                  />
-                </PaginationItem>
-
-                {Array.from({ length: pagination.pages }).map((_, i) => {
-                  const pageNumber = i + 1;
-
-                  // Only show a limited number of page links
-                  if (
-                    pageNumber === 1 ||
-                    pageNumber === pagination.pages ||
-                    (pageNumber >= pagination.page - 1 &&
-                      pageNumber <= pagination.page + 1)
-                  ) {
-                    return (
-                      <PaginationItem key={pageNumber}>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                            e.preventDefault();
-                            goToPage(pageNumber);
-                          }}
-                          isActive={pageNumber === pagination.page}
+        ) : (
+          <>
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => toggleSort("id")}
                         >
-                          {pageNumber}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  }
+                          ID
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => toggleSort("recipeName")}
+                        >
+                          Recipe
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => toggleSort("quantity")}
+                        >
+                          Quantity
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Batch Number</TableHead>
+                      <TableHead>
+                        <Button
+                          variant="ghost"
+                          onClick={() => toggleSort("createdAt")}
+                        >
+                          Date
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Created By</TableHead>
+                      <TableHead>Details</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {records.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          No production records found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      records.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell className="font-medium">
+                            #{record.id}
+                          </TableCell>
+                          <TableCell>{record.recipeName}</TableCell>
+                          <TableCell>{record.quantity}</TableCell>
+                          <TableCell>
+                            {Array.isArray(record.batchNumbers) ? (
+                              record.batchNumbers.length > 0 ? (
+                                <div className="max-h-20 overflow-y-auto">
+                                  {record.batchNumbers.map((batchNumber, index) => (
+                                    <div key={index} className="text-sm mb-1">
+                                      {batchNumber}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">No batch numbers</span>
+                              )
+                            ) : (
+                              record.batchNumbers
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(record.createdAt), "MMM d, yyyy")}
+                            <br />
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(record.createdAt), "h:mm a")}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  {record.userEmail || "User"}
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {record.userEmail}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell>
+                            <Accordion
+                              type="single"
+                              collapsible
+                              className="w-full"
+                            >
+                              <AccordionItem value={`item-${record.id}`}>
+                                <AccordionTrigger className="py-2">
+                                  View Details
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="space-y-4">
+                                    {record.notes && (
+                                      <div className="p-2 bg-slate-50 rounded-sm">
+                                        <p className="text-sm font-medium">
+                                          Notes:
+                                        </p>
+                                        <p className="text-sm">
+                                          {record.notes}
+                                        </p>
+                                      </div>
+                                    )}
 
-                  // Show ellipsis for skipped pages
-                  if (
-                    (pageNumber === 2 && pagination.page > 3) ||
-                    (pageNumber === pagination.pages - 1 &&
-                      pagination.page < pagination.pages - 2)
-                  ) {
-                    return (
-                      <PaginationItem key={`ellipsis-${pageNumber}`}>
-                        <span className="px-4">...</span>
-                      </PaginationItem>
-                    );
-                  }
+                                    <div>
+                                      <p className="text-sm font-medium mb-2">
+                                        Ingredients Used:
+                                      </p>
+                                      <ul className="space-y-1">
+                                        {record.ingredients.map(
+                                          (ingredient) => (
+                                            <li
+                                              key={ingredient.id}
+                                              className="text-sm"
+                                            >
+                                              {ingredient.name}:{" "}
+                                              {ingredient.quantity}{" "}
+                                              {ingredient.unit}
+                                            </li>
+                                          )
+                                        )}
+                                      </ul>
+                                    </div>
 
-                  return null;
-                })}
+                                    {record.wastage.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium mb-2">
+                                          Wastage:
+                                        </p>
+                                        <ul className="space-y-1">
+                                          {record.wastage.map((item) => (
+                                            <li
+                                              key={item.id}
+                                              className="text-sm"
+                                            >
+                                              {item.name}: {item.quantity}{" "}
+                                              {item.unit}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
 
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                      e.preventDefault();
-                      if (pagination.page < pagination.pages) {
-                        goToPage(pagination.page + 1);
+            <div className="mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        (
+                          e as React.MouseEvent<HTMLAnchorElement>
+                        ).preventDefault();
+                        if (pagination.page > 1) {
+                          goToPage(pagination.page - 1);
+                        }
+                      }}
+                      className={
+                        pagination.page <= 1
+                          ? "pointer-events-none opacity-50"
+                          : ""
                       }
-                    }}
-                    className={
-                      pagination.page >= pagination.pages
-                        ? "pointer-events-none opacity-50"
-                        : ""
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: pagination.pages }).map((_, i) => {
+                    const pageNumber = i + 1;
+
+                    // Only show a limited number of page links
+                    if (
+                      pageNumber === 1 ||
+                      pageNumber === pagination.pages ||
+                      (pageNumber >= pagination.page - 1 &&
+                        pageNumber <= pagination.page + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(
+                              e: React.MouseEvent<HTMLAnchorElement>
+                            ) => {
+                              e.preventDefault();
+                              goToPage(pageNumber);
+                            }}
+                            isActive={pageNumber === pagination.page}
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
                     }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        </>
-      )}
+
+                    // Show ellipsis for skipped pages
+                    if (
+                      (pageNumber === 2 && pagination.page > 3) ||
+                      (pageNumber === pagination.pages - 1 &&
+                        pagination.page < pagination.pages - 2)
+                    ) {
+                      return (
+                        <PaginationItem key={`ellipsis-${pageNumber}`}>
+                          <span className="px-4">...</span>
+                        </PaginationItem>
+                      );
+                    }
+
+                    return null;
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                        e.preventDefault();
+                        if (pagination.page < pagination.pages) {
+                          goToPage(pagination.page + 1);
+                        }
+                      }}
+                      className={
+                        pagination.page >= pagination.pages
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

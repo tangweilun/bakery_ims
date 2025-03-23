@@ -3,6 +3,21 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { Batch } from "@prisma/client";
 
+// Define interfaces for the data structures
+interface IngredientUsage {
+  ingredientId: number | string;
+  quantity: number;
+  reason: string;
+}
+
+interface StockShortage {
+  ingredientId: number;
+  name: string;
+  needed: number;
+  available: number;
+  unit: string;
+}
+
 export async function POST(req: Request) {
   try {
     console.log("Starting yield API POST request");
@@ -41,7 +56,6 @@ export async function POST(req: Request) {
       );
     }
 
-    //get recipes requrie ingredient
     // Fetch the recipe with its required ingredients
     const recipe = await prisma.recipe.findUnique({
       where: { id: Number(recipeId) },
@@ -76,12 +90,6 @@ export async function POST(req: Request) {
       };
     });
 
-    // // Transform ingredients into the needed format
-    // const ingredientUsage = ingredients.map((ingredient) => ({
-    //   ingredientId: ingredient.id,
-    //   quantity: Number(quantity), // Default usage quantity per ingredient
-    //   reason: "Production",
-    // }));
     console.log("ingredientUsage:", JSON.stringify(ingredientUsage, null, 2));
 
     const wastageRecords = ingredients
@@ -96,37 +104,14 @@ export async function POST(req: Request) {
     // Validate stock before processing
     const ingredientIds = [
       ...new Set([
-        ...ingredientUsage.map((u: any) => u.ingredientId),
+        ...ingredientUsage.map((u: IngredientUsage) => u.ingredientId),
         ...wastageRecords
-          .filter((w: any) => w.quantity > 0)
-          .map((w: any) => w.ingredientId),
+          .filter((w: IngredientUsage) => w.quantity > 0)
+          .map((w: IngredientUsage) => w.ingredientId),
       ]),
     ];
 
     console.log("ingredientIds:", JSON.stringify(ingredientIds, null, 2));
-
-    // Find the oldest batch for each ingredient (FIFO)
-    const oldestBatch = await prisma.batch.findFirst({
-      where: {
-        ingredientId: { in: ingredientIds },
-        remainingQuantity: { gt: 0 }, // Ensure batch has stock
-      },
-      orderBy: {
-        receivedDate: "asc", // FIFO: oldest batch first
-      },
-    });
-    console.log("oldestBatch:", JSON.stringify(oldestBatch, null, 2));
-
-    if (!oldestBatch) {
-      console.log("Error: No available batch found for ingredients");
-      return NextResponse.json(
-        { error: "No available batch found for ingredients" },
-        { status: 400 }
-      );
-    }
-
-    const oldestBatchNumber = oldestBatch.batchNumber; // Use the oldest batch number
-    console.log("oldestBatchNumber:", oldestBatchNumber);
 
     // Fetch all ingredients with their available batches, ordered by receivedDate for FIFO
     const ingredientsRecords = await prisma.ingredient.findMany({
@@ -141,11 +126,11 @@ export async function POST(req: Request) {
     console.log("ingredientsRecords count:", ingredientsRecords.length);
 
     // Calculate total quantity needed for each ingredient (usage + wastage)
-    const stockShortages: any[] = [];
-    const totalUsageMap = new Map();
+    const stockShortages: StockShortage[] = [];
+    const totalUsageMap = new Map<number | string, number>();
 
     [...ingredientUsage, ...wastageRecords].forEach(
-      ({ ingredientId, quantity }: any) => {
+      ({ ingredientId, quantity }: IngredientUsage) => {
         totalUsageMap.set(
           ingredientId,
           (totalUsageMap.get(ingredientId) || 0) + quantity
@@ -193,12 +178,16 @@ export async function POST(req: Request) {
     // Transaction for production and stock updates
     console.log("Starting transaction");
     const result = await prisma.$transaction(async (tx) => {
-      // Create production record
+      // Create a set to track all used batch numbers
+      const usedBatchNumbers = new Set<string>();
+
+      // Initially create production record without batch numbers (we'll update it later)
       const productionRecord = await tx.productionRecord.create({
         data: {
           recipeId: Number(recipeId),
           quantity: Number(quantity),
-          batchNumber: oldestBatchNumber,
+          // The batchNumbers field will be updated after processing all ingredients
+          batchNumbers: [], // Assuming schema now has batchNumbers as string[]
           notes,
           userId: user.id,
         },
@@ -253,17 +242,23 @@ export async function POST(req: Request) {
             `Deducting ${deductFromBatch} from batch ${batch.id} (remaining: ${batch.remainingQuantity})`
           );
 
+          // Add this batch number to our tracking set
+          usedBatchNumbers.add(batch.batchNumber);
+          console.log(
+            `Added batch number ${batch.batchNumber} to tracking list`
+          );
+
           // Update the batch's remaining quantity
           await tx.batch.update({
             where: { id: batch.id },
             data: {
               remainingQuantity: { decrement: deductFromBatch },
-              updatedAt: new Date(), // Use updatedAt as the timestamp
+              updatedAt: new Date(),
             },
           });
           console.log(`Batch ${batch.id} updated, deducted ${deductFromBatch}`);
 
-          // Create batch usage record for traceability using your existing BatchUsage model
+          // Create batch usage record for traceability
           await tx.batchUsage.create({
             data: {
               batchId: batch.id,
@@ -313,7 +308,7 @@ export async function POST(req: Request) {
       for (const wastage of wastageRecords) {
         if (Number(wastage.quantity) <= 0) continue; // Skip zero or negative wastage
 
-        // Create usage record for wastage (using your UsageRecord model since you don't have a separate WastageRecord)
+        // Create usage record for wastage
         const wastageUsageRecord = await tx.usageRecord.create({
           data: {
             ingredientId: Number(wastage.ingredientId),
@@ -328,7 +323,7 @@ export async function POST(req: Request) {
         let remainingToDeduct = Number(wastage.quantity);
 
         // Find the ingredient
-        const ingredient = ingredients.find(
+        const ingredient = ingredientsRecords.find(
           (i) => i.id === Number(wastage.ingredientId)
         );
         if (!ingredient) continue;
@@ -348,16 +343,19 @@ export async function POST(req: Request) {
             remainingToDeduct
           );
 
+          // Add this batch number to our tracking set
+          usedBatchNumbers.add(batch.batchNumber);
+
           // Update the batch's remaining quantity
           await tx.batch.update({
             where: { id: batch.id },
             data: {
               remainingQuantity: { decrement: deductFromBatch },
-              updatedAt: new Date(), // Use updatedAt as the timestamp
+              updatedAt: new Date(),
             },
           });
 
-          // Create batch usage record for traceability using your existing BatchUsage model
+          // Create batch usage record for traceability
           await tx.batchUsage.create({
             data: {
               batchId: batch.id,
@@ -396,17 +394,40 @@ export async function POST(req: Request) {
         });
       }
 
+      // Convert the Set of batch numbers to an array and update the production record
+      const batchNumbersArray = Array.from(usedBatchNumbers);
+      console.log(
+        `Updating production record with batch numbers: ${batchNumbersArray.join(
+          ", "
+        )}`
+      );
+
+      // Update the production record with all used batch numbers
+      const updatedProductionRecord = await tx.productionRecord.update({
+        where: { id: productionRecord.id },
+        data: {
+          batchNumbers: batchNumbersArray,
+        },
+      });
+      console.log(
+        `Updated production record with batch numbers: ${updatedProductionRecord.batchNumbers.join(
+          ", "
+        )}`
+      );
+
       // Log the production completion
       await tx.activity.create({
         data: {
           action: "PRODUCTION_COMPLETED",
-          description: `Completed production of ${quantity} units of recipe #${recipeId}`,
+          description: `Completed production of ${quantity} units of recipe #${recipeId} using batches: ${batchNumbersArray.join(
+            ", "
+          )}`,
           userId: user.id,
           productionRecordId: productionRecord.id,
         },
       });
 
-      return productionRecord;
+      return updatedProductionRecord;
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -451,9 +472,8 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build where clause based on filters
-    const where: any = {};
-
-    if (recipeId) {
+    const where: Record<string, any> = {};
+    if (recipeId && recipeId !== "none") {
       where.recipeId = parseInt(recipeId);
     }
 
@@ -516,7 +536,7 @@ export async function GET(req: NextRequest) {
         recipeId: record.recipeId,
         recipeName: record.recipe.name,
         quantity: record.quantity,
-        batchNumber: record.batchNumber,
+        batchNumbers: record.batchNumbers,
         notes: record.notes,
         createdAt: record.createdAt,
         userId: record.userId,

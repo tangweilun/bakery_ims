@@ -145,7 +145,7 @@ model ProductionRecord {
   recipe            Recipe @relation(fields: [recipeId], references: [id])
   recipeId          Int
   quantity          Int
-  batchNumber       String
+  batchNumbers       String[]
   notes             String?
   user              User   @relation(fields: [userId], references: [id])
   userId            String @db.Uuid

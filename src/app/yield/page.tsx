@@ -6,6 +6,9 @@ import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
 import { toast } from "react-toastify";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { HistoryIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type RecipeWithIngredients = Recipe & {
   recipeIngredients: (RecipeIngredient & {
@@ -31,7 +34,7 @@ export default function YieldManagementPage() {
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const router = useRouter();
   // Fetch recipes on component mount
   useEffect(() => {
     async function fetchRecipes() {
@@ -202,6 +205,9 @@ export default function YieldManagementPage() {
       setIsSubmitting(false);
     }
   };
+  const navigateToHistory = () => {
+    router.push("/yield/history");
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -214,8 +220,17 @@ export default function YieldManagementPage() {
         </div>
       </div>
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Yield Management</h1>
-
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Yield Management</h1>
+          <Button
+            variant="outline"
+            onClick={navigateToHistory}
+            className="flex items-center gap-2"
+          >
+            <HistoryIcon className="h-4 w-4" />
+            View History
+          </Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Recipe Selection */}
           <div className="border rounded-lg p-4">
