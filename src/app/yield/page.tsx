@@ -7,7 +7,7 @@ import { UserNav } from "@/components/user-nav";
 import { toast } from "react-toastify";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { HistoryIcon } from "lucide-react";
+import { HistoryIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type RecipeWithIngredients = Recipe & {
@@ -237,7 +237,7 @@ export default function YieldManagementPage() {
             <div className="mb-2">
               <label className="block font-medium mb-1">Select Recipe</label>
               {isLoadingRecipes ? (
-                <Skeleton className="h-10 w-full" />
+                <Loader2 className="h-8 w-8 animate-spin" />
               ) : (
                 <select
                   className="w-full border rounded p-2"

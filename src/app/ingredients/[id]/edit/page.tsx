@@ -6,8 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 // shadcn components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -220,8 +219,6 @@ export default function EditIngredientPage({
   // Main layout that's consistent across all states
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <ToastContainer position="bottom-right" />
-
       {/* Header/Navigation - always visible */}
       <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">

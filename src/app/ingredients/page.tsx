@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import Link from "next/link";
 import {
   Pencil,
@@ -296,8 +296,6 @@ export default function ManageIngredients() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <ToastContainer position="bottom-right" />
-
       {/* Header/Navigation */}
       <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">

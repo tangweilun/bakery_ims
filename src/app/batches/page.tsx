@@ -46,7 +46,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Trash, AlertTriangle } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Search,
+  Trash,
+  AlertTriangle,
+  Trash2,
+} from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Batch, BatchUsageData } from "@/types/batch";
 import { Ingredient } from "@/types/ingredient";
@@ -446,11 +453,13 @@ export default function BatchesPage() {
                                 View Usage
                               </Button>
                               <Button
-                                variant="destructive"
                                 size="icon"
+                                variant="ghost"
                                 onClick={() => confirmDeleteBatch(batch)}
+                                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                title="Delete"
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
