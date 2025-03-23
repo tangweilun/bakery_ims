@@ -16,3 +16,32 @@ export interface Batch {
   location: string | null;
   notes: string | null;
 }
+
+export interface BatchUsageData {
+  batch: Batch;
+  batchUsages: BatchUsage[];
+}
+
+export interface BatchUsage {
+  id: number;
+  batchId: number;
+  usageRecordId: number;
+  quantityUsed: number;
+  createdAt: string;
+  usageRecord: {
+    id: number;
+    reason: string;
+    notes: string | null;
+    createdAt: string;
+    user: {
+      name: string | null;
+      email: string;
+    };
+    productionRecord: {
+      recipe: {
+        name: string;
+      };
+      quantity: number;
+    } | null;
+  };
+}
