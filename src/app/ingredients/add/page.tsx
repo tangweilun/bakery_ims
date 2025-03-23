@@ -37,6 +37,7 @@ export default function AddIngredientForm() {
   const supabase = createClient();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true); // New state for tracking supplier loading
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -79,6 +80,7 @@ export default function AddIngredientForm() {
 
     // Fetch suppliers for the dropdown
     const fetchSuppliers = async () => {
+      setLoadingSuppliers(true); // Set loading state to true before fetching
       try {
         const response = await fetch("/api/suppliers");
         if (!response.ok) throw new Error("Failed to fetch suppliers");
@@ -87,6 +89,8 @@ export default function AddIngredientForm() {
       } catch (err) {
         console.error("Error fetching suppliers:", err);
         toast.error("Failed to load suppliers");
+      } finally {
+        setLoadingSuppliers(false); // Set loading state to false after fetching
       }
     };
 
@@ -339,7 +343,14 @@ export default function AddIngredientForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="supplier">Supplier</Label>
-                  {suppliers && suppliers.length > 0 ? (
+                  {loadingSuppliers ? (
+                    <div className="flex items-center space-x-2 h-10 pl-3 border rounded-md">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                      <span className="text-gray-500">
+                        Loading suppliers...
+                      </span>
+                    </div>
+                  ) : suppliers && suppliers.length > 0 ? (
                     <Select
                       value={formData.supplierId}
                       onValueChange={(value) =>
