@@ -33,12 +33,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Edit } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Search,
+  Edit,
+  Trash,
+  AlertTriangle,
+} from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Batch } from "@/types/batch";
+import { Batch, BatchUsageData } from "@/types/batch";
 import { Ingredient } from "@/types/ingredient";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
@@ -50,7 +67,13 @@ export default function BatchesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewBatchUsageOpen, setIsViewBatchUsageOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [batchToDelete, setBatchToDelete] = useState<Batch | null>(null);
   const [currentBatch, setCurrentBatch] = useState<Batch | null>(null);
+  const [batchUsageData, setBatchUsageData] = useState<BatchUsageData | null>(
+    null
+  );
+  const [isLoadingUsage, setIsLoadingUsage] = useState(false);
   const [filter, setFilter] = useState({
     ingredient: "none",
     expiryStatus: "all", // all, expired, expiringSoon, active
@@ -92,12 +115,14 @@ export default function BatchesPage() {
 
     fetchData();
   }, []);
+
   const generateBatchNumber = () => {
     const today = new Date();
     const datePart = today.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
     const randomPart = Math.floor(1000 + Math.random() * 9000); // Random 4-digit number
     return `${datePart}-${randomPart}`;
   };
+
   const handleAddBatch = async () => {
     const batchNumber = generateBatchNumber(); // Auto-generate batch number
     try {
@@ -131,13 +156,69 @@ export default function BatchesPage() {
       });
     } catch (error) {
       console.error("Error adding batch:", error);
-      toast.error("Error fetching data");
+      toast.error("Error adding batch");
     }
   };
 
-  const handleViewBatchUsage = (batch: Batch) => {
+  // Show delete confirmation dialog
+  const confirmDeleteBatch = (batch: Batch) => {
+    setBatchToDelete(batch);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteBatch = async () => {
+    if (!batchToDelete) return;
+
+    try {
+      const response = await fetch(`/api/batches/${batchToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete batch");
+      }
+
+      // Remove the batch from the state
+      setBatches(batches.filter((b) => b.id !== batchToDelete.id));
+      toast.success(`Batch ${batchToDelete.batchNumber} deleted successfully!`);
+
+      // Close dialog and reset state
+      setIsDeleteDialogOpen(false);
+      setBatchToDelete(null);
+    } catch (error) {
+      console.error("Error deleting batch:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error(errorMessage);
+    }
+  };
+
+  const formatQuantity = (value: number) => {
+    // Check if the number is an integer
+    return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+  };
+
+  const handleViewBatchUsage = async (batch: Batch) => {
     setCurrentBatch(batch);
     setIsViewBatchUsageOpen(true);
+    setIsLoadingUsage(true);
+
+    try {
+      const response = await fetch(`/api/batches/${batch.id}/usage`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch batch usage data");
+      }
+
+      const data = await response.json();
+      setBatchUsageData(data);
+    } catch (error) {
+      console.error("Error fetching batch usage:", error);
+      toast.error("Error fetching batch usage data");
+    } finally {
+      setIsLoadingUsage(false);
+    }
   };
 
   const getExpiryStatus = (expiryDate: Date | null) => {
@@ -371,8 +452,12 @@ export default function BatchesPage() {
                               >
                                 View Usage
                               </Button>
-                              <Button variant="outline" size="icon">
-                                <Edit className="h-4 w-4" />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => confirmDeleteBatch(batch)}
+                              >
+                                <Trash className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -407,11 +492,6 @@ export default function BatchesPage() {
                         (ingredient) => ingredient.id.toString() === value
                       );
 
-                      console.log("Selected Ingredient:", selectedIngredient); // Debugging
-                      console.log(
-                        "Selected Ingredient name:",
-                        selectedIngredient?.name
-                      ); // Debugging
                       setNewBatch({
                         ...newBatch,
                         ingredientId: parseInt(value),
@@ -529,12 +609,51 @@ export default function BatchesPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Confirm Deletion
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete batch{" "}
+                <span className="font-semibold">
+                  {batchToDelete?.batchNumber}
+                </span>
+                of{" "}
+                <span className="font-semibold">
+                  {batchToDelete?.ingredient.name}
+                </span>
+                ?
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
+                  This action cannot be undone. This will permanently delete the
+                  batch and all associated records.
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteBatch}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete Batch
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* View Batch Usage Dialog */}
         <Dialog
           open={isViewBatchUsageOpen}
           onOpenChange={setIsViewBatchUsageOpen}
         >
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Batch Usage History</DialogTitle>
               <DialogDescription>
@@ -545,7 +664,7 @@ export default function BatchesPage() {
             <div className="py-4">
               {/* Batch details summary */}
               <div className="bg-gray-50 p-4 rounded-md mb-4">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div>
                     <p className="text-sm font-medium text-gray-500">
                       Ingredient
@@ -557,7 +676,10 @@ export default function BatchesPage() {
                       Initial Quantity
                     </p>
                     <p>
-                      {currentBatch?.quantity} {currentBatch?.ingredient.unit}
+                      {currentBatch
+                        ? formatQuantity(currentBatch.quantity)
+                        : ""}{" "}
+                      {currentBatch?.ingredient.unit}
                     </p>
                   </div>
                   <div>
@@ -565,29 +687,138 @@ export default function BatchesPage() {
                       Remaining
                     </p>
                     <p>
-                      {currentBatch?.remainingQuantity}{" "}
+                      {currentBatch
+                        ? formatQuantity(currentBatch.remainingQuantity)
+                        : ""}{" "}
                       {currentBatch?.ingredient.unit}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Usage</p>
                     <p>
-                      {(
-                        (currentBatch?.quantity || 0) -
-                        (currentBatch?.remainingQuantity || 0)
-                      ).toFixed(2)}{" "}
+                      {currentBatch
+                        ? formatQuantity(
+                            (currentBatch.quantity || 0) -
+                              (currentBatch.remainingQuantity || 0)
+                          )
+                        : ""}{" "}
                       {currentBatch?.ingredient.unit}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Placeholder for usage records - in a real app, you'd fetch these */}
-              <p className="text-center py-4 text-gray-500">
-                Loading usage records...
-              </p>
+              {/* Usage records table */}
+              {isLoadingUsage ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : batchUsageData?.batchUsages.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No usage records found for this batch.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">
+                          Date
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          Quantity Used
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          Purpose
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          Production
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          User
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">
+                          Notes
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {batchUsageData?.batchUsages.map((usage) => (
+                        <TableRow key={usage.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {new Date(usage.createdAt).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatQuantity(usage.quantityUsed)}{" "}
+                            {currentBatch?.ingredient.unit}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {usage.usageRecord.reason}
+                          </TableCell>
+                          <TableCell>
+                            {usage.usageRecord.productionRecord ? (
+                              <>
+                                <span className="font-medium">
+                                  {
+                                    usage.usageRecord.productionRecord.recipe
+                                      .name
+                                  }
+                                </span>
+                                <span className="text-gray-500 text-sm block">
+                                  Qty:{" "}
+                                  {usage.usageRecord.productionRecord.quantity}
+                                </span>
+                              </>
+                            ) : (
+                              "N/A"
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {usage.usageRecord.user.name ||
+                              usage.usageRecord.user.email}
+                          </TableCell>
+                          <TableCell>
+                            {usage.usageRecord.notes || "No notes"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
 
-              {/* Usage records would be shown here */}
+              {/* Usage summary - only show if there are usage records */}
+              {batchUsageData &&
+                batchUsageData.batchUsages &&
+                batchUsageData.batchUsages.length > 0 && (
+                  <div className="mt-4 p-4 border rounded-md bg-gray-50">
+                    <h4 className="font-medium mb-2">Usage Summary</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">
+                          Total Usage Records
+                        </p>
+                        <p className="font-medium">
+                          {batchUsageData?.batchUsages.length}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">
+                          Total Quantity Used
+                        </p>
+                        <p className="font-medium">
+                          {formatQuantity(
+                            batchUsageData?.batchUsages.reduce(
+                              (sum, usage) => sum + usage.quantityUsed,
+                              0
+                            ) || 0
+                          )}{" "}
+                          {currentBatch?.ingredient.unit}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
 
             <DialogFooter>

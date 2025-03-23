@@ -160,3 +160,79 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const params = await context.params;
+    const { id } = params;
+    const batchId = parseInt(id);
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    if (isNaN(batchId)) {
+      return NextResponse.json({ error: "Invalid batch ID" }, { status: 400 });
+    }
+
+    // Check if batch exists
+    const batch = await prisma.batch.findUnique({
+      where: { id: batchId },
+    });
+
+    if (!batch) {
+      return NextResponse.json({ error: "Batch not found" }, { status: 404 });
+    }
+
+    // Check if batch has any usage records
+    const batchUsageCount = await prisma.batchUsage.count({
+      where: { batchId },
+    });
+
+    if (batchUsageCount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete batch with existing usage records" },
+        { status: 400 }
+      );
+    }
+
+    // Create activity log entry
+    await prisma.activity.create({
+      data: {
+        action: "BATCH_DELETED",
+        description: `Batch ${batch.batchNumber} deleted`,
+        details: JSON.stringify({
+          batchNumber: batch.batchNumber,
+          ingredientId: batch.ingredientId,
+          quantity: batch.quantity,
+        }),
+        batchId: batchId, // This will be removed when the batch is deleted, but useful for the log
+        userId: user.id, // You should replace this with the actual user ID from your auth system
+      },
+    });
+
+    // Delete the batch
+    await prisma.batch.delete({
+      where: { id: batchId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting batch:", error);
+    return NextResponse.json(
+      { error: "Failed to delete batch" },
+      { status: 500 }
+    );
+  }
+}
