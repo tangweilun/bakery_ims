@@ -132,7 +132,6 @@ export default function ManageIngredients() {
   // Filter and sort ingredients whenever filters change
   useEffect(() => {
     let result = [...ingredients];
-
     // Apply search filter
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
@@ -163,7 +162,11 @@ export default function ManageIngredients() {
           );
           break;
         case "ideal":
-          result = result.filter((ing) => ing.currentStock >= ing.idealStock);
+          result = result.filter(
+            (ing) =>
+              ing.currentStock >= ing.idealStock &&
+              !(ing.currentStock < ing.minimumStock) // Ensures low stock items are removed
+          );
           break;
       }
     }
