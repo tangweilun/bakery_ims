@@ -67,19 +67,14 @@ export default function EditIngredientPage({
 
   // First, extract the ID from params asynchronously
   useEffect(() => {
-    const getParamsId = async () => {
-      try {
-        const { id } = await params;
-        setIngredientId(id);
-      } catch (error) {
-        console.error("Error getting params:", error);
-        setError("Failed to load ingredient ID");
-        setLoading(false);
-        toast.error("Failed to load ingredient ID");
-      }
-    };
-
-    getParamsId();
+    // No need to await params, it's already available as an object
+    if (params && params.id) {
+      setIngredientId(params.id);
+    } else {
+      setError("Failed to load ingredient ID");
+      setLoading(false);
+      toast.error("Failed to load ingredient ID");
+    }
   }, [params]);
 
   // Fetch ingredient data
