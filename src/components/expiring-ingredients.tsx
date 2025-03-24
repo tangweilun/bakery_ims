@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge";
 
 export function ExpiringIngredients() {
   return (
@@ -27,7 +27,7 @@ export function ExpiringIngredients() {
           <p className="text-sm text-muted-foreground">Expires in 7 days</p>
         </div>
         <div className="ml-auto font-medium">
-          <Badge variant="warning">Warning</Badge>
+          <Badge variant="outline">Warning</Badge>
         </div>
       </div>
       <div className="flex items-center">
@@ -49,6 +49,5 @@ export function ExpiringIngredients() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
