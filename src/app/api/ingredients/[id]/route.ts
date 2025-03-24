@@ -110,14 +110,13 @@ export async function PATCH(
   }
 }
 
-// DELETE an ingredient (isActive false since cascade deleting is not approiate)
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params; // Await the params Promise
-    const { id } = params; // Now safely destructure id
+    const params = await context.params;
+    const { id } = params;
     const ingredientId = parseInt(id);
 
     const supabase = await createClient();
@@ -136,8 +135,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
+    // First check if the ingredient exists
     const ingredient = await prisma.ingredient.findUnique({
       where: { id: ingredientId },
+      include: {
+        // Include counts of related records to check dependencies
+        batches: {
+          select: { id: true },
+          where: { remainingQuantity: { gt: 0 } },
+        },
+        recipeIngredients: { select: { id: true } },
+        usageRecords: { select: { id: true } },
+      },
     });
 
     if (!ingredient) {
@@ -147,28 +156,64 @@ export async function DELETE(
       );
     }
 
-    // Execute transaction for deletion and activity logging
+    // Check if ingredient has active relationships that prevent deletion
+    const hasActiveBatches = ingredient.batches.length > 0;
+    const isUsedInRecipes = ingredient.recipeIngredients.length > 0;
+    const hasUsageRecords = ingredient.usageRecords.length > 0;
+
+    if (hasActiveBatches || isUsedInRecipes || hasUsageRecords) {
+      // Construct detailed error message
+      const dependenciesDetails = [];
+      if (hasActiveBatches)
+        dependenciesDetails.push(`${ingredient.batches.length} active batches`);
+      if (isUsedInRecipes)
+        dependenciesDetails.push(
+          `${ingredient.recipeIngredients.length} recipes`
+        );
+      if (hasUsageRecords)
+        dependenciesDetails.push(
+          `${ingredient.usageRecords.length} usage records`
+        );
+
+      return NextResponse.json(
+        {
+          error: `Cannot delete ingredient as it has active relationships. This ingredient is referenced in: ${dependenciesDetails.join(
+            ", "
+          )}.`,
+          details: `This ingredient is referenced in: ${dependenciesDetails.join(
+            ", "
+          )}. Consider marking it as inactive instead.`,
+          canMarkInactive: true,
+        },
+        { status: 409 }
+      );
+    }
+
+    // If no relationships prevent deletion, proceed with soft delete
     await prisma.$transaction(async (tx) => {
-      // Delete ingredient
+      // Soft delete ingredient
       await tx.ingredient.update({
         where: { id: ingredientId },
         data: { isActive: false },
       });
 
-      // Log the deletion in activity
+      // Log the action in activity
       await tx.activity.create({
         data: {
-          action: "INGREDIENT_DELETED",
-          description: `Deleted ingredient: ${ingredient.name}`,
+          action: "INGREDIENT_MARKED_INACTIVE",
+          description: `Marked ingredient as inactive: ${ingredient.name}`,
           userId: user.id,
           ingredientId: ingredient.id,
         },
       });
     });
 
-    return NextResponse.json({ message: "Ingredient deleted successfully" });
+    return NextResponse.json({
+      message: "Ingredient marked as inactive successfully",
+      ingredientName: ingredient.name,
+    });
   } catch (error) {
-    console.error("Error deleting ingredient:", error);
+    console.error("Error handling ingredient deletion:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2003") {
         return NextResponse.json(
@@ -181,7 +226,7 @@ export async function DELETE(
       }
     }
     return NextResponse.json(
-      { error: "Failed to delete ingredient" },
+      { error: "Failed to process ingredient deletion request" },
       { status: 500 }
     );
   }

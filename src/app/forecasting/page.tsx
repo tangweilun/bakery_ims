@@ -1,6 +1,4 @@
 import { MainNav } from "@/components/main-nav";
-import PredictionForm from "@/components/PredictionForm";
-import { Search } from "@/components/search";
 import { UserNav } from "@/components/user-nav";
 
 export default function ForecastingPage() {
@@ -14,7 +12,6 @@ export default function ForecastingPage() {
           </div>
         </div>
       </div>
-      <PredictionForm />
     </div>
   );
 }

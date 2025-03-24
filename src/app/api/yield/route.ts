@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
-import { Batch } from "@prisma/client";
+import { Batch, Prisma } from "@prisma/client";
 
 // Define interfaces for the data structures
 interface IngredientUsage {
@@ -472,7 +472,7 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build where clause based on filters
-    const where: Record<string, any> = {};
+    const where: Prisma.ProductionRecordWhereInput = {};
     if (recipeId && recipeId !== "none") {
       where.recipeId = parseInt(recipeId);
     }

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
 import { toast } from "react-toastify";
@@ -64,7 +63,6 @@ import { Ingredient } from "@/types/ingredient";
 
 export default function ManageIngredients() {
   const router = useRouter();
-  const supabase = createClient();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [filteredIngredients, setFilteredIngredients] = useState<Ingredient[]>(
     []
@@ -72,7 +70,7 @@ export default function ManageIngredients() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("none");
   const [stockFilter, setStockFilter] = useState("");
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -89,21 +87,6 @@ export default function ManageIngredients() {
   const categories = [...new Set(ingredients.map((ing) => ing.category))];
 
   useEffect(() => {
-    // Check if user is authenticated
-    const checkAuth = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          router.push("/sign-in"); // Redirect to login if not authenticated
-        }
-      } catch (error) {
-        console.log("Authentication error:", error);
-        router.push("/sign-in");
-      }
-    };
-
     // Fetch ingredients
     const fetchIngredients = async () => {
       setIsLoading(true);
@@ -125,9 +108,8 @@ export default function ManageIngredients() {
       }
     };
 
-    checkAuth();
     fetchIngredients();
-  }, [router, supabase]);
+  }, [router]);
 
   // Filter and sort ingredients whenever filters change
   useEffect(() => {
@@ -144,7 +126,7 @@ export default function ManageIngredients() {
     }
 
     // Apply category filter
-    if (categoryFilter) {
+    if (categoryFilter != "none") {
       result = result.filter((ing) => ing.category === categoryFilter);
     }
 
@@ -748,7 +730,8 @@ export default function ManageIngredients() {
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this ingredient? This action
-              cannot be undone.
+              cannot be undone. The delete action can only be executed when
+              there are no associated records with the ingredient.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center text-destructive my-4">

@@ -24,6 +24,19 @@ type IngredientWithWaste = {
   wasted: number;
 };
 
+type ShortageItem = {
+  name: string;
+  needed: number;
+  available: number;
+  unit: string;
+};
+
+type YieldApiResponse = {
+  message?: string;
+  error?: string;
+  shortages?: ShortageItem[];
+};
+
 export default function YieldManagementPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
@@ -62,7 +75,7 @@ export default function YieldManagementPage() {
       setIsLoadingDetails(true);
       try {
         const response = await fetch(`/api/recipes/${selectedRecipeId}`);
-        const data = await response.json();
+        const data = (await response.json()) as RecipeWithIngredients;
         setRecipeDetails(data);
         // Check if recipeIngredients exists before mapping
         if (!data.recipeIngredients || !Array.isArray(data.recipeIngredients)) {
@@ -72,7 +85,7 @@ export default function YieldManagementPage() {
           return;
         }
         // Initialize ingredients with waste set to 0
-        const ingredientsWithWaste = data.recipeIngredients.map((ri: any) => ({
+        const ingredientsWithWaste = data.recipeIngredients.map((ri) => ({
           id: ri.ingredient.id,
           name: ri.ingredient.name,
           unit: ri.ingredient.unit,
@@ -97,23 +110,21 @@ export default function YieldManagementPage() {
   useEffect(() => {
     if (!recipeDetails || !recipeDetails.recipeIngredients) return;
 
-    const updatedIngredients = recipeDetails.recipeIngredients.map(
-      (ri: any) => {
-        const existingIngredient = ingredients.find(
-          (ing) => ing.id === ri.ingredient.id
-        );
-        return {
-          id: ri.ingredient.id,
-          name: ri.ingredient.name,
-          unit: ri.ingredient.unit,
-          requiredQuantity: ri.quantity * quantity,
-          wasted: existingIngredient ? existingIngredient.wasted : 0,
-        };
-      }
-    );
+    const updatedIngredients = recipeDetails.recipeIngredients.map((ri) => {
+      const existingIngredient = ingredients.find(
+        (ing) => ing.id === ri.ingredient.id
+      );
+      return {
+        id: ri.ingredient.id,
+        name: ri.ingredient.name,
+        unit: ri.ingredient.unit,
+        requiredQuantity: ri.quantity * quantity,
+        wasted: existingIngredient ? existingIngredient.wasted : 0,
+      };
+    });
 
     setIngredients(updatedIngredients);
-  }, [quantity, recipeDetails]);
+  }, [quantity, recipeDetails, ingredients]);
 
   // Handle recipe selection change
   const handleRecipeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -170,7 +181,7 @@ export default function YieldManagementPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as YieldApiResponse;
       if (response.ok) {
         toast.success("Stock updated successfully");
         // Reset form or fetch updated data
@@ -179,7 +190,7 @@ export default function YieldManagementPage() {
         if (data.message === "Insufficient stock" && data.shortages) {
           // Create a detailed error message for insufficient stock
           const shortageMessages = data.shortages.map(
-            (item: any) =>
+            (item) =>
               `${item.name}: Need ${item.needed} ${item.unit}, Available ${item.available} ${item.unit}`
           );
 
@@ -187,7 +198,7 @@ export default function YieldManagementPage() {
             <div>
               <p className="font-bold">Insufficient stock:</p>
               <ul className="list-disc pl-4 mt-1">
-                {shortageMessages.map((msg: string, i: number) => (
+                {shortageMessages.map((msg, i) => (
                   <li key={i}>{msg}</li>
                 ))}
               </ul>

@@ -184,7 +184,17 @@ export default function YieldHistoryPage() {
     };
 
     fetchRecords();
-  }, [searchParams]);
+  }, [
+    searchParams, 
+    pagination.page, 
+    pagination.limit, 
+    selectedRecipe, 
+    startDate, 
+    endDate, 
+    batchNumber, 
+    sortBy, 
+    sortOrder
+  ]);
 
   // Fetch recipes for filter dropdown
   useEffect(() => {
