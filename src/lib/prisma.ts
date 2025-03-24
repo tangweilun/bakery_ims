@@ -1,7 +1,30 @@
+// import { PrismaClient } from "@prisma/client";
+
+// const globalForPrisma = global as unknown as { prisma?: PrismaClient };
+
+// export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+// if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: ["query", "info", "warn", "error"], // Enables logging to debug issues
+  });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+
+  // Gracefully disconnect Prisma when stopping the server
+  process.on("SIGINT", async () => {
+    await prisma.$disconnect();
+    process.exit();
+  });
+
+  process.on("SIGTERM", async () => {
+    await prisma.$disconnect();
+  });
+}
