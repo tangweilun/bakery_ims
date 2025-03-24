@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
@@ -16,7 +16,8 @@ import {
 import { motion } from "framer-motion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function ConfirmationPage() {
+// Create a client component that uses useSearchParams
+function ConfirmationContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
 
@@ -152,5 +153,22 @@ export default function ConfirmationPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function ConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-r from-[#F0F7FF] to-[#F5F3FF] flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg text-gray-700">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <ConfirmationContent />
+    </Suspense>
   );
 }
