@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { MainNav } from "@/components/main-nav";
@@ -30,13 +30,9 @@ type Supplier = {
   name: string;
 };
 
-export default function EditIngredientPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function EditIngredientPage() {
   const router = useRouter();
-
+  const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,17 +61,15 @@ export default function EditIngredientPage({
     supplierId: null,
   });
 
-  // First, extract the ID from params asynchronously
   useEffect(() => {
-    // No need to await params, it's already available as an object
-    if (params && params.id) {
-      setIngredientId(params.id);
+    if (id) {
+      setIngredientId(Array.isArray(id) ? id[0] : id);
     } else {
       setError("Failed to load ingredient ID");
       setLoading(false);
       toast.error("Failed to load ingredient ID");
     }
-  }, [params]);
+  }, [id]);
 
   // Fetch ingredient data
   useEffect(() => {
