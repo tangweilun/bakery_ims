@@ -159,8 +159,8 @@ export async function POST(req: Request) {
         stockShortages.push({
           ingredientId: ingredient.id,
           name: ingredient.name,
-          needed: totalNeeded,
-          available: totalAvailable,
+          needed: parseFloat(totalNeeded.toFixed(2)),
+          available: parseFloat(totalAvailable.toFixed(2)),
           unit: ingredient.unit,
         });
       }

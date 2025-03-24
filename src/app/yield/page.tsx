@@ -122,8 +122,11 @@ export default function YieldManagementPage() {
         wasted: existingIngredient ? existingIngredient.wasted : 0,
       };
     });
-
-    setIngredients(updatedIngredients);
+    setIngredients((prev) =>
+      JSON.stringify(prev) === JSON.stringify(updatedIngredients)
+        ? prev
+        : updatedIngredients
+    );
   }, [quantity, recipeDetails, ingredients]);
 
   // Handle recipe selection change
