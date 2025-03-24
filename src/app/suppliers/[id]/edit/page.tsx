@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 // Form validation schema
 const formSchema = z.object({
@@ -32,7 +33,8 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
-export default function EditSupplier({ params }: { params: { id: string } }) {
+export default function EditSupplier() {
+  const { id } = useParams();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,22 +54,16 @@ export default function EditSupplier({ params }: { params: { id: string } }) {
     },
   });
 
-  // First, extract the ID from params asynchronously
+  // Extract the ID from the URL
   useEffect(() => {
-    const getParamsId = async () => {
-      try {
-        // Properly await the params
-        const { id } = await params;
-        setSupplierId(id);
-      } catch (error) {
-        console.error("Error getting params:", error);
-        setError("Failed to load supplier ID");
-        setIsLoading(false);
-      }
-    };
-
-    getParamsId();
-  }, [params]);
+    if (id) {
+      setSupplierId(Array.isArray(id) ? id[0] : id);
+    } else {
+      setError("Failed to load ingredient ID");
+      setIsLoading(false);
+      toast.error("Failed to load ingredient ID");
+    }
+  }, [id]);
 
   // Then use the extracted ID for fetching data
   useEffect(() => {
