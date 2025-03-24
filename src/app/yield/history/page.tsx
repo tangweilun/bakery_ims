@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import { MainNav } from "@/components/main-nav";
+import { useSearchParams } from "next/navigation";
 
 type ProductionRecord = {
   id: number;
@@ -125,7 +126,6 @@ export default function YieldHistoryPage() {
 
 // Content component that uses useSearchParams
 function YieldHistoryContent() {
-  const { useSearchParams } = require("next/navigation");
   const searchParams = useSearchParams();
   const router = useRouter();
 
