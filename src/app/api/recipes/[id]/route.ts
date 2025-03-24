@@ -164,9 +164,13 @@ export async function PATCH(
 }
 
 // DELETE /api/recipes/[id] - Delete recipe
-export async function DELETE(context: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = context.params;
+    const params = await context.params;
+    const { id } = params;
     const recipeId = parseInt(id);
     // Create Supabase server client
     const supabase = await createClient();
