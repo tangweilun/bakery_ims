@@ -185,15 +185,15 @@ export default function YieldHistoryPage() {
 
     fetchRecords();
   }, [
-    searchParams, 
-    pagination.page, 
-    pagination.limit, 
-    selectedRecipe, 
-    startDate, 
-    endDate, 
-    batchNumber, 
-    sortBy, 
-    sortOrder
+    searchParams,
+    pagination.page,
+    pagination.limit,
+    selectedRecipe,
+    startDate,
+    endDate,
+    batchNumber,
+    sortBy,
+    sortOrder,
   ]);
 
   // Fetch recipes for filter dropdown
@@ -448,7 +448,7 @@ export default function YieldHistoryPage() {
                   <FileDown className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
-                <Button onClick={applyFilters}>Apply Filters</Button>
+                {/* <Button onClick={applyFilters}>Apply Filters</Button> */}
               </div>
             </div>
           </CardContent>

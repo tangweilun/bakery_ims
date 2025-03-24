@@ -38,7 +38,7 @@
     "prisma": "^6.4.1",
     "puppeteer": "^24.4.0",
     "react": "19.0",
-    "react-day-picker": "^9.6.3",
+    "react-day-picker": "^9.4.3",
     "react-dom": "19.0",
     "react-hook-form": "^7.54.2",
     "react-toastify": "^11.0.5",
