@@ -215,26 +215,26 @@ export default function YieldHistoryPage() {
   }, []);
 
   // Apply filters
-  const applyFilters = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1"); // Reset to first page when filtering
-    if (selectedRecipe && selectedRecipe !== "none") {
-      params.set("recipeId", selectedRecipe);
-    } else {
-      params.delete("recipeId");
-    }
-    if (startDate) params.set("startDate", format(startDate, "yyyy-MM-dd"));
-    if (endDate) params.set("endDate", format(endDate, "yyyy-MM-dd"));
-    if (batchNumber.trim()) {
-      params.set("batchNumber", batchNumber.trim());
-    } else {
-      params.delete("batchNumber");
-    }
-    params.set("sortBy", sortBy);
-    params.set("sortOrder", sortOrder);
+  //   const applyFilters = () => {
+  //     const params = new URLSearchParams(searchParams.toString());
+  //     params.set("page", "1"); // Reset to first page when filtering
+  //     if (selectedRecipe && selectedRecipe !== "none") {
+  //       params.set("recipeId", selectedRecipe);
+  //     } else {
+  //       params.delete("recipeId");
+  //     }
+  //     if (startDate) params.set("startDate", format(startDate, "yyyy-MM-dd"));
+  //     if (endDate) params.set("endDate", format(endDate, "yyyy-MM-dd"));
+  //     if (batchNumber.trim()) {
+  //       params.set("batchNumber", batchNumber.trim());
+  //     } else {
+  //       params.delete("batchNumber");
+  //     }
+  //     params.set("sortBy", sortBy);
+  //     params.set("sortOrder", sortOrder);
 
-    router.push(`?${params.toString()}`);
-  };
+  //     router.push(`?${params.toString()}`);
+  //   };
 
   // Reset filters
   const resetFilters = () => {
