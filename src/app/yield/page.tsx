@@ -7,6 +7,17 @@ import { UserNav } from "@/components/user-nav";
 import { toast } from "react-toastify";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { HistoryIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -52,6 +63,11 @@ export default function YieldManagementPage() {
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // New state for shortages
+  const [shortages, setShortages] = useState<ShortageItem[]>([]);
+  const [isShortageDialogOpen, setIsShortageDialogOpen] = useState(false);
+
   const router = useRouter();
 
   // Fetch all recipes on component mount
@@ -184,24 +200,8 @@ export default function YieldManagementPage() {
         toast.success("Stock updated successfully");
       } else {
         if (data.message === "Insufficient stock" && data.shortages) {
-          // const shortageMessages = data.shortages.map(
-          //   (item) =>
-          //     `${item.name}: Need ${item.needed} ${item.unit}, Available ${item.available} ${item.unit}`
-          // );
-
-          toast.error(
-            "Insufficient stock"
-
-            // <div>
-            //   <p className="font-bold">Insufficient stock:</p>
-            //   <ul className="list-disc pl-4 mt-1">
-            //     {shortageMessages.map((msg, i) => (
-            //       <li key={i}>{msg}</li>
-            //     ))}
-            //   </ul>
-            // </div>,
-            // { autoClose: 8000 }
-          );
+          setShortages(data.shortages || []);
+          setIsShortageDialogOpen(true);
         } else {
           toast.error(data.error || data.message || "Failed to update stock");
         }
@@ -234,7 +234,7 @@ export default function YieldManagementPage() {
       {/* Main Content */}
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Latest V Yield Management</h1>
+          <h1 className="text-2xl font-bold">Yield Management</h1>
           <Button
             variant="outline"
             onClick={navigateToHistory}
@@ -378,6 +378,32 @@ export default function YieldManagementPage() {
           </button>
         </div>
       </div>
+
+      {/* Shortage Alert Dialog */}
+      <AlertDialog
+        open={isShortageDialogOpen}
+        onOpenChange={setIsShortageDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Insufficient Stock</AlertDialogTitle>
+            <AlertDialogDescription>
+              The following ingredients are insufficient to complete the recipe:
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                {shortages.map((item, index) => (
+                  <li key={index}>
+                    {item.name}: Need {item.needed} {item.unit}, Available{" "}
+                    {item.available} {item.unit}
+                  </li>
+                ))}
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
