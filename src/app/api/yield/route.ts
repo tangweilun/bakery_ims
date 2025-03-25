@@ -171,7 +171,7 @@ export async function POST(req: Request) {
       console.log("Error: Insufficient stock");
       return NextResponse.json(
         { message: "Insufficient stock", shortages: stockShortages },
-        { status: 200 }
+        { status: 400 }
       );
     }
 
