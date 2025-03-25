@@ -130,7 +130,7 @@ export default function ManageSuppliers() {
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold">Suppliers</h2>
           <Button asChild>
-            <Link href="/suppliers/add">
+            <Link href="/suppliers/create">
               <PlusCircle className="mr-2 h-5 w-5" /> Add Supplier
             </Link>
           </Button>
@@ -149,7 +149,7 @@ export default function ManageSuppliers() {
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">No suppliers found.</p>
             <Button asChild>
-              <Link href="/suppliers/add">
+              <Link href="/suppliers/create">
                 <PlusCircle className="mr-2 h-5 w-5" /> Add Your First Supplier
               </Link>
             </Button>

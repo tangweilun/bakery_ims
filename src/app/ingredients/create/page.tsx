@@ -378,7 +378,7 @@ export default function AddIngredientForm() {
                       </div>
                       <Button
                         type="button"
-                        onClick={() => router.push("/suppliers/add")}
+                        onClick={() => router.push("/suppliers/create")}
                         variant="outline"
                         size="sm"
                       >
