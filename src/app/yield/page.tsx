@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { HistoryIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// Define types for recipe with ingredients
 type RecipeWithIngredients = Recipe & {
   recipeIngredients: (RecipeIngredient & {
     ingredient: Ingredient;
   })[];
 };
 
+// Define type for ingredients with waste tracking
 type IngredientWithWaste = {
   id: number;
   name: string;
@@ -24,6 +26,7 @@ type IngredientWithWaste = {
   wasted: number;
 };
 
+// Define type for shortage items in API response
 type ShortageItem = {
   name: string;
   needed: number;
@@ -31,6 +34,7 @@ type ShortageItem = {
   unit: string;
 };
 
+// Define API response type
 type YieldApiResponse = {
   message?: string;
   error?: string;
@@ -38,6 +42,7 @@ type YieldApiResponse = {
 };
 
 export default function YieldManagementPage() {
+  // State declarations
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
   const [recipeDetails, setRecipeDetails] =
@@ -48,7 +53,8 @@ export default function YieldManagementPage() {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  // Fetch recipes on component mount
+
+  // Fetch all recipes on component mount
   useEffect(() => {
     async function fetchRecipes() {
       setIsLoadingRecipes(true);
@@ -67,9 +73,13 @@ export default function YieldManagementPage() {
     fetchRecipes();
   }, []);
 
-  // Fetch recipe ingredients when a recipe is selected
+  // Fetch recipe details when selectedRecipeId changes
   useEffect(() => {
-    if (!selectedRecipeId) return;
+    if (!selectedRecipeId) {
+      setRecipeDetails(null);
+      setIngredients([]);
+      return;
+    }
 
     async function fetchRecipeDetails() {
       setIsLoadingDetails(true);
@@ -77,26 +87,10 @@ export default function YieldManagementPage() {
         const response = await fetch(`/api/recipes/${selectedRecipeId}`);
         const data = (await response.json()) as RecipeWithIngredients;
         setRecipeDetails(data);
-        // Check if recipeIngredients exists before mapping
-        if (!data.recipeIngredients || !Array.isArray(data.recipeIngredients)) {
-          console.error("Recipe ingredients data is missing or invalid:", data);
-          toast.error("Invalid recipe data structure");
-          setIngredients([]);
-          return;
-        }
-        // Initialize ingredients with waste set to 0
-        const ingredientsWithWaste = data.recipeIngredients.map((ri) => ({
-          id: ri.ingredient.id,
-          name: ri.ingredient.name,
-          unit: ri.ingredient.unit,
-          requiredQuantity: ri.quantity * quantity,
-          wasted: 0,
-        }));
-
-        setIngredients(ingredientsWithWaste);
       } catch (error) {
         console.error("Failed to fetch recipe details:", error);
         toast.error("Failed to load recipe details");
+        setRecipeDetails(null);
         setIngredients([]);
       } finally {
         setIsLoadingDetails(false);
@@ -104,30 +98,31 @@ export default function YieldManagementPage() {
     }
 
     fetchRecipeDetails();
-  }, [selectedRecipeId, quantity]);
+  }, [selectedRecipeId]);
 
-  // Update required quantities when quantity changes
+  // Update ingredients when recipeDetails or quantity changes
   useEffect(() => {
-    if (!recipeDetails || !recipeDetails.recipeIngredients) return;
+    if (!recipeDetails || !recipeDetails.recipeIngredients) {
+      setIngredients([]);
+      return;
+    }
 
-    const updatedIngredients = recipeDetails.recipeIngredients.map((ri) => {
-      const existingIngredient = ingredients.find(
-        (ing) => ing.id === ri.ingredient.id
-      );
-      return {
-        id: ri.ingredient.id,
-        name: ri.ingredient.name,
-        unit: ri.ingredient.unit,
-        requiredQuantity: ri.quantity * quantity,
-        wasted: existingIngredient ? existingIngredient.wasted : 0,
-      };
+    setIngredients((prevIngredients) => {
+      const newIngredients = recipeDetails.recipeIngredients.map((ri) => {
+        const existing = prevIngredients.find(
+          (ing) => ing.id === ri.ingredient.id
+        );
+        return {
+          id: ri.ingredient.id,
+          name: ri.ingredient.name,
+          unit: ri.ingredient.unit,
+          requiredQuantity: ri.quantity * quantity,
+          wasted: existing ? existing.wasted : 0,
+        };
+      });
+      return newIngredients;
     });
-    setIngredients((prev) =>
-      JSON.stringify(prev) === JSON.stringify(updatedIngredients)
-        ? prev
-        : updatedIngredients
-    );
-  }, [quantity, recipeDetails, ingredients]);
+  }, [recipeDetails, quantity]);
 
   // Handle recipe selection change
   const handleRecipeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -160,7 +155,7 @@ export default function YieldManagementPage() {
     );
   };
 
-  // Handle stock update
+  // Handle stock update submission
   const handleUpdateStock = async () => {
     if (!recipeDetails) {
       toast.error("Please select a recipe first");
@@ -187,11 +182,8 @@ export default function YieldManagementPage() {
       const data = (await response.json()) as YieldApiResponse;
       if (response.ok) {
         toast.success("Stock updated successfully");
-        // Reset form or fetch updated data
       } else {
-        // Handle specific error cases
         if (data.message === "Insufficient stock" && data.shortages) {
-          // Create a detailed error message for insufficient stock
           const shortageMessages = data.shortages.map(
             (item) =>
               `${item.name}: Need ${item.needed} ${item.unit}, Available ${item.available} ${item.unit}`
@@ -206,7 +198,7 @@ export default function YieldManagementPage() {
                 ))}
               </ul>
             </div>,
-            { autoClose: 8000 } // Give users more time to read detailed messages
+            { autoClose: 8000 }
           );
         } else {
           toast.error(data.error || data.message || "Failed to update stock");
@@ -219,12 +211,15 @@ export default function YieldManagementPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Navigate to history page
   const navigateToHistory = () => {
     router.push("/yield/history");
   };
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Header */}
       <div className="border-b">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
@@ -233,6 +228,8 @@ export default function YieldManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* Main Content */}
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Yield Management</h1>
@@ -245,8 +242,9 @@ export default function YieldManagementPage() {
             View History
           </Button>
         </div>
+
+        {/* Recipe Selection and Quantity Input */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Recipe Selection */}
           <div className="border rounded-lg p-4">
             <div className="mb-2">
               <label className="block font-medium mb-1">Select Recipe</label>
@@ -270,7 +268,6 @@ export default function YieldManagementPage() {
             </div>
           </div>
 
-          {/* Quantity Input */}
           <div className="border rounded-lg p-4">
             <div className="mb-2">
               <label className="block font-medium mb-1">Quantity</label>
@@ -290,7 +287,7 @@ export default function YieldManagementPage() {
           </div>
         </div>
 
-        {/* Ingredients Table with Loading State */}
+        {/* Ingredients Table */}
         {selectedRecipeId && (
           <div className="border rounded-lg p-4 mb-6">
             <div className="mb-2">
@@ -353,15 +350,15 @@ export default function YieldManagementPage() {
         <div className="flex justify-end">
           <button
             className={`bg-black text-white px-4 py-2 rounded-lg transition 
-    ${
-      isSubmitting ||
-      isLoadingDetails ||
-      isLoadingRecipes ||
-      !selectedRecipeId ||
-      ingredients.length === 0
-        ? "opacity-70 cursor-not-allowed"
-        : "hover:bg-gray-800"
-    }`}
+              ${
+                isSubmitting ||
+                isLoadingDetails ||
+                isLoadingRecipes ||
+                !selectedRecipeId ||
+                ingredients.length === 0
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-gray-800"
+              }`}
             onClick={handleUpdateStock}
             disabled={
               isSubmitting ||
