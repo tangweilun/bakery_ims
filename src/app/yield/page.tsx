@@ -184,13 +184,14 @@ export default function YieldManagementPage() {
         toast.success("Stock updated successfully");
       } else {
         if (data.message === "Insufficient stock" && data.shortages) {
-          const shortageMessages = data.shortages.map(
-            (item) =>
-              `${item.name}: Need ${item.needed} ${item.unit}, Available ${item.available} ${item.unit}`
-          );
+          // const shortageMessages = data.shortages.map(
+          //   (item) =>
+          //     `${item.name}: Need ${item.needed} ${item.unit}, Available ${item.available} ${item.unit}`
+          // );
 
           toast.error(
             "Insufficient stock"
+
             // <div>
             //   <p className="font-bold">Insufficient stock:</p>
             //   <ul className="list-disc pl-4 mt-1">
