@@ -190,15 +190,16 @@ export default function YieldManagementPage() {
           );
 
           toast.error(
-            <div>
-              <p className="font-bold">Insufficient stock:</p>
-              <ul className="list-disc pl-4 mt-1">
-                {shortageMessages.map((msg, i) => (
-                  <li key={i}>{msg}</li>
-                ))}
-              </ul>
-            </div>,
-            { autoClose: 8000 }
+            "Insufficient stock"
+            // <div>
+            //   <p className="font-bold">Insufficient stock:</p>
+            //   <ul className="list-disc pl-4 mt-1">
+            //     {shortageMessages.map((msg, i) => (
+            //       <li key={i}>{msg}</li>
+            //     ))}
+            //   </ul>
+            // </div>,
+            // { autoClose: 8000 }
           );
         } else {
           toast.error(data.error || data.message || "Failed to update stock");
