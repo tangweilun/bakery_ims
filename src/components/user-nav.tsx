@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
-import { User as UserIcon, LogOut, Settings, User } from "lucide-react";
+import { User as UserIcon, LogOut } from "lucide-react";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
