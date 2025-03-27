@@ -39,7 +39,6 @@ model Ingredient {
   isActive          Boolean             @default(true) // Flag to mark ingredient as active/inactive
   // Relations
   batches           Batch[]
-  restockHistory    RestockHistory[]
   usageRecords      UsageRecord[]
   recipeIngredients RecipeIngredient[]
   lowStockAlerts    LowStockAlert[]
@@ -61,7 +60,6 @@ model Supplier {
   
   // Relations
   ingredients       Ingredient[]
-  restockHistory    RestockHistory[]
   activities        Activity[]          // Link to activity log
   
   // Timestamps
@@ -81,6 +79,7 @@ model Recipe {
   sellingPrice      Float               // Retail price per item
   
   // Relations
+   saleItems         SaleItem[]
   recipeIngredients RecipeIngredient[]
   productionRecords ProductionRecord[]
   activities        Activity[]          // Link to activity log
@@ -116,8 +115,6 @@ model Batch {
   notes             String?
   
   // Relations
-  restockHistory    RestockHistory?     @relation(fields: [restockHistoryId], references: [id])
-  restockHistoryId  Int?                @unique // One-to-one relationship
   batchUsages       BatchUsage[]
   activities        Activity[]          // Link to activity log
   
@@ -151,27 +148,6 @@ model ProductionRecord {
   userId            String @db.Uuid
 
   usageRecords      UsageRecord[]
-  activities        Activity[]
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-
-model RestockHistory {
-  id                Int    @id @default(autoincrement())
-  ingredient        Ingredient @relation(fields: [ingredientId], references: [id])
-  ingredientId      Int
-  supplier          Supplier? @relation(fields: [supplierId], references: [id])
-  supplierId        Int?
-  quantity          Float
-  cost              Float
-  invoiceNumber     String?
-  notes             String?
-  user              User   @relation(fields: [userId], references: [id])
-  userId            String @db.Uuid
-
-  batch             Batch?
   activities        Activity[]
   
   createdAt         DateTime @default(now())
@@ -234,33 +210,62 @@ model DemandForecast {
   updatedAt         DateTime            @updatedAt
 }
 
-model InventoryReport {
-  id                Int    @id @default(autoincrement())
-  reportType        String
-  startDate         DateTime
-  endDate           DateTime
-  reportData        String
-  notes             String?
-  user              User   @relation(fields: [userId], references: [id])
-  userId            String @db.Uuid
-  activities        Activity[]
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
 model User {
   id                String  @id @default(uuid()) @db.Uuid
   email             String  @unique
   name              String?
   // Relations
   productionRecords ProductionRecord[]
-  restockHistory    RestockHistory[]
   usageRecords      UsageRecord[]
-  inventoryReports  InventoryReport[]
+  sales             Sale[]
   activities        Activity[]
 
   // Timestamps
   createdAt         DateTime @default(now())
+}
+
+model Sale {
+  id                Int                 @id @default(autoincrement())
+  datetime          DateTime
+  dayOfWeek         String
+  totalAmount       Float
+  
+  // Relation to User who made the sale
+  user              User                @relation(fields: [userId], references: [id])
+  userId            String              @db.Uuid
+  
+  // Sale items - individual products sold in this transaction
+  saleItems         SaleItem[]
+  
+  // Optional notes or additional context
+  notes             String?
+  
+  // Link to activity log
+  activities        Activity[]
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model SaleItem {
+  id                Int                 @id @default(autoincrement())
+  sale              Sale                @relation(fields: [saleId], references: [id])
+  saleId            Int
+  
+  // Relation to Recipe (product) sold
+  recipe            Recipe              @relation(fields: [recipeId], references: [id])
+  recipeId          Int
+  
+  quantity          Int
+  unitPrice         Float
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  // Ensure no duplicate entries
+  @@unique([saleId, recipeId])
 }
 
 
@@ -289,18 +294,15 @@ model Activity {
   productionRecordId Int?
   productionRecord  ProductionRecord? @relation(fields: [productionRecordId], references: [id])
 
-  restockHistoryId  Int?
-  restockHistory    RestockHistory? @relation(fields: [restockHistoryId], references: [id])
-
   usageRecordId     Int?
   usageRecord       UsageRecord? @relation(fields: [usageRecordId], references: [id])
 
   lowStockAlertId   Int?
   lowStockAlert     LowStockAlert? @relation(fields: [lowStockAlertId], references: [id])
 
-  inventoryReportId Int?
-  inventoryReport   InventoryReport? @relation(fields: [inventoryReportId], references: [id])
-
+  saleId            Int?
+  sale              Sale? @relation(fields: [saleId], references: [id])
+  
   createdAt         DateTime @default(now())
 }
 
@@ -319,7 +321,6 @@ enum ActivityAction {
   PRODUCTION_COMPLETED
   PRODUCTION_CANCELLED
   
-  INGREDIENT_RESTOCKED
   INGREDIENT_USED
   
   BATCH_CREATED
@@ -337,6 +338,10 @@ enum ActivityAction {
   USER_LOGIN
   USER_LOGOUT
   
+  SALE_CREATED
+  SALE_UPDATED
+  SALE_DELETED
+
   REPORT_GENERATED
   
   SYSTEM_BACKUP

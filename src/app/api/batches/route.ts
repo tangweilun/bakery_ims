@@ -115,25 +115,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create restock history record
-      const restockHistory = await tx.restockHistory.create({
-        data: {
-          ingredientId,
-          quantity,
-          cost,
-          notes: `Batch ${batchNumber} received`,
-          userId: userData.id,
-        },
-      });
-
-      // Link batch to restock history
-      await tx.batch.update({
-        where: { id: newBatch.id },
-        data: {
-          restockHistoryId: restockHistory.id,
-        },
-      });
-
       // Log activity
       await tx.activity.create({
         data: {
@@ -148,7 +129,6 @@ export async function POST(request: NextRequest) {
           userId: userData.id,
           ingredientId,
           batchId: newBatch.id,
-          restockHistoryId: restockHistory.id,
         },
       });
 
