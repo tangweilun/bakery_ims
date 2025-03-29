@@ -22,6 +22,7 @@ export function MainNav({
     { href: "/recipes", label: "Recipes" },
     { href: "/batches", label: "Batch Tracking" },
     { href: "/yield", label: "Yield Management" },
+    { href: "/sales", label: "Sales" },
     { href: "/forecasting", label: "Forecasting" },
   ];
 
