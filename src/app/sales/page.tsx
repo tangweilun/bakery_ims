@@ -47,6 +47,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserNav } from "@/components/user-nav";
 import { MainNav } from "@/components/main-nav";
+import { toast } from "react-toastify";
+import { DeleteSaleDialog } from "./delete-dialog";
+import { EditSaleDialog } from "./edit-dialog";
 
 // Types for our data
 type Recipe = {
@@ -79,7 +82,13 @@ export default function SalesPage() {
   const [open, setOpen] = useState(false);
 
   // Filter states
-  const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [dateFilter, setDateFilter] = useState<{
+    from: Date | null;
+    to: Date | null;
+  }>({
+    from: null,
+    to: null,
+  });
   const [dayFilter, setDayFilter] = useState<string | null>(null);
   const [recipeFilter, setRecipeFilter] = useState<number | null>(null);
   const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({
@@ -145,11 +154,21 @@ export default function SalesPage() {
     let result = [...sales];
 
     // Date filter
-    if (dateFilter) {
-      const filterDate = format(dateFilter, "yyyy-MM-dd");
+    if (dateFilter.from || dateFilter.to) {
       result = result.filter((sale) => {
-        const saleDate = format(new Date(sale.datetime), "yyyy-MM-dd");
-        return saleDate === filterDate;
+        const saleDate = new Date(sale.datetime);
+
+        // Check if sale date is after the "from" date (if specified)
+        const isAfterFrom = dateFilter.from
+          ? saleDate >= new Date(dateFilter.from.setHours(0, 0, 0, 0))
+          : true;
+
+        // Check if sale date is before the "to" date (if specified)
+        const isBeforeTo = dateFilter.to
+          ? saleDate <= new Date(dateFilter.to.setHours(23, 59, 59, 999))
+          : true;
+
+        return isAfterFrom && isBeforeTo;
       });
     }
 
@@ -182,7 +201,7 @@ export default function SalesPage() {
 
   // Reset all filters
   const resetFilters = () => {
-    setDateFilter(null);
+    setDateFilter({ from: null, to: null });
     setDayFilter(null);
     setRecipeFilter(null);
     setPriceRange({ min: "", max: "" });
@@ -247,9 +266,13 @@ export default function SalesPage() {
           saleItems: [],
         });
         setOpen(false);
+        toast.success("Sale created successfully!");
+      } else {
+        toast.error("Failed to create sale. Please try again.");
       }
     } catch (error) {
       console.error("Error creating sale:", error);
+      toast.error("Error creating sale. Please try again later.");
     }
   };
 
@@ -269,6 +292,64 @@ export default function SalesPage() {
   };
 
   const stats = calculateStats();
+
+  // Add these handler functions to the main SalesPage component
+  // Handler to update sale
+  const handleUpdateSale = async (updatedSale: Sale) => {
+    try {
+      toast.info("Updating sale...");
+      const response = await fetch(`/api/sales/${updatedSale.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          datetime: updatedSale.datetime,
+          dayOfWeek: updatedSale.dayOfWeek,
+          saleItems: updatedSale.saleItems.map((item) => ({
+            recipeId: item.recipeId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          })),
+        }),
+      });
+
+      if (response.ok) {
+        const updatedSaleData = await response.json();
+        setSales((prev) =>
+          prev.map((sale) =>
+            sale.id === updatedSaleData.id ? updatedSaleData : sale
+          )
+        );
+        toast.success("Sale updated successfully!");
+      } else {
+        toast.error("Failed to update sale. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error updating sale:", error);
+      toast.error("Error updating sale. Please try again later.");
+    }
+  };
+
+  // Handler to delete sale
+  const handleDeleteSale = async (saleId: number) => {
+    try {
+      toast.info("Deleting sale...");
+      const response = await fetch(`/api/sales/${saleId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setSales((prev) => prev.filter((sale) => sale.id !== saleId));
+        toast.success("Sale deleted successfully!");
+      } else {
+        toast.error("Failed to delete sale. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting sale:", error);
+      toast.error("Error deleting sale. Please try again later.");
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -451,15 +532,30 @@ export default function SalesPage() {
                         >
                           <CalendarIcon className="h-4 w-4" />
                           {dateFilter
-                            ? format(dateFilter, "PP")
+                            ? `${
+                                dateFilter.from
+                                  ? format(dateFilter.from, "PP")
+                                  : ""
+                              } - ${
+                                dateFilter.to ? format(dateFilter.to, "PP") : ""
+                              }`
                             : "Filter by Date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
                         <Calendar
-                          mode="single"
-                          selected={dateFilter || undefined}
-                          onSelect={(value) => setDateFilter(value ?? null)}
+                          mode="range"
+                          selected={{
+                            from: dateFilter.from || undefined,
+                            to: dateFilter.to || undefined,
+                          }}
+                          onSelect={(range) => {
+                            setDateFilter({
+                              from: range?.from || null,
+                              to: range?.to || null,
+                            });
+                          }}
+                          numberOfMonths={2}
                           required={false}
                         />
                       </PopoverContent>
@@ -536,21 +632,38 @@ export default function SalesPage() {
                 </div>
 
                 {/* Active filters display */}
-                {(dateFilter ||
+                {(dateFilter.from ||
+                  dateFilter.to ||
                   dayFilter ||
                   recipeFilter ||
                   priceRange.min ||
                   priceRange.max) && (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {dateFilter && (
+                    {dateFilter.from && (
                       <Badge
                         variant="secondary"
                         className="flex gap-1 items-center"
                       >
-                        Date: {format(dateFilter, "PP")}
+                        From: {format(dateFilter.from, "PP")}
                         <XCircleIcon
                           className="h-3 w-3 cursor-pointer"
-                          onClick={() => setDateFilter(null)}
+                          onClick={() =>
+                            setDateFilter({ ...dateFilter, from: null })
+                          }
+                        />
+                      </Badge>
+                    )}
+                    {dateFilter.to && (
+                      <Badge
+                        variant="secondary"
+                        className="flex gap-1 items-center"
+                      >
+                        To: {format(dateFilter.to, "PP")}
+                        <XCircleIcon
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() =>
+                            setDateFilter({ ...dateFilter, to: null })
+                          }
                         />
                       </Badge>
                     )}
@@ -648,6 +761,34 @@ export default function SalesPage() {
                                 {item.quantity} x {item.recipe?.name}
                               </span>
                             ))}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    Edit
+                                  </Button>
+                                </DialogTrigger>
+                                <EditSaleDialog
+                                  sale={sale}
+                                  recipes={recipes}
+                                  onSave={handleUpdateSale}
+                                />
+                              </Dialog>
+
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="destructive" size="sm">
+                                    Delete
+                                  </Button>
+                                </DialogTrigger>
+                                <DeleteSaleDialog
+                                  sale={sale}
+                                  onDelete={handleDeleteSale}
+                                />
+                              </Dialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

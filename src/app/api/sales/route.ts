@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
     try {
       body = await req.json();
     } catch (parseError) {
+      console.warn("Error parsing JSON in request body:", parseError);
       return NextResponse.json(
         { error: "Invalid JSON in request body" },
         { status: 400 }
@@ -145,10 +146,10 @@ export async function POST(req: NextRequest) {
                 create: saleItems.map((item) => ({
                   recipe: {
                     connect: {
-                      id: item.recipeId, // Now using number instead of string
+                      id: item.recipeId,
                     },
                   },
-                  recipeId: item.recipeId,
+                  // Remove the recipeId field here as it's handled by the connect relation
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
                 })),
