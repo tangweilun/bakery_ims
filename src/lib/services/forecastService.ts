@@ -1,4 +1,4 @@
-import * as tf from "@tensorflow/tfjs";
+import * as tf from "@tensorflow/tfjs-node";
 import { AggregatedSalesData } from "./salesService";
 import { prisma } from "@/lib/prisma";
 
