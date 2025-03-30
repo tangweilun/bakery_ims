@@ -83,6 +83,7 @@ model Recipe {
   recipeIngredients RecipeIngredient[]
   productionRecords ProductionRecord[]
   activities        Activity[]          // Link to activity log
+  demandForecasts   DemandForecast[]
   
   // Timestamps
   createdAt         DateTime            @default(now())
@@ -196,14 +197,18 @@ enum AlertStatus {
 
 model DemandForecast {
   id                Int                 @id @default(autoincrement())
-  ingredientId      Int?                // Optional, for ingredient-specific forecasts
   recipeId          Int?                // Optional, for recipe-specific forecasts
+  recipe            Recipe?             @relation(fields: [recipeId], references: [id])
+  recipeName        String?             // Store recipe name directly for historical purposes
   startDate         DateTime
   endDate           DateTime
   forecastQuantity  Float
   confidenceLevel   Float?              // Optional, percentage of confidence
   factors           String?             // JSON string of factors considered
   notes             String?
+  
+  // New fields for time series data
+  timeSeriesData    String              // JSON string containing dates, actual and predicted quantities
   
   // Timestamps
   createdAt         DateTime            @default(now())

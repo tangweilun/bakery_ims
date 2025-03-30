@@ -13,10 +13,12 @@ import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, Save, History } from "lucide-react";
+import Link from "next/link";
 import { ForecastChart } from "@/components/forecasts/ForecastChart";
 import { ForecastTable } from "@/components/forecasts/ForecastTable";
 import { IngredientRequirementsChart } from "@/components/forecasts/IngredientRequirementsChart";
+import { toast } from "react-toastify";
 // Remove ForecastControls import since we're not using it anymore
 
 // Define proper types
@@ -202,6 +204,57 @@ export default function ForecastsPage() {
     }
   };
 
+  // Add a function to save the forecast
+  const saveForecast = async () => {
+    if (!forecastData) {
+      toast.error("Please generate a forecast first");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/forecasts/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recipeId: forecastData.recipeId,
+          recipeName: forecastData.recipeName,
+          startDate: forecastData.dates[0],
+          endDate: forecastData.dates[forecastData.dates.length - 1],
+          forecastQuantity: forecastData.predictedQuantities.reduce(
+            (sum, qty) => (sum || 0) + (qty || 0),
+            0
+          ),
+          confidenceLevel: forecastData.confidenceLevel,
+          factors: JSON.stringify({
+            method: forecastParams.method,
+            days: forecastParams.days,
+            forecastDays: forecastParams.forecastDays,
+            windowSize: forecastParams.windowSize,
+          }),
+          timeSeriesData: JSON.stringify({
+            dates: forecastData.dates,
+            actualQuantities: forecastData.actualQuantities,
+            predictedQuantities: forecastData.predictedQuantities,
+          }),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save forecast");
+      }
+
+      toast.success("Forecast saved successfully");
+    } catch (err) {
+      console.error("Error saving forecast:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save forecast"
+      );
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="border-b">
@@ -212,8 +265,18 @@ export default function ForecastsPage() {
           </div>
         </div>
       </div>
-      <div className="container mx-auto py-6">
-        <h1 className="text-3xl font-bold mb-6">Demand Forecasting</h1>
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Demand Forecasting</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/forecasts/saved">
+                <History className="h-4 w-4 mr-2" />
+                View History
+              </Link>
+            </Button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <Card className="md:col-span-1">
@@ -340,9 +403,7 @@ export default function ForecastsPage() {
                       </p>
                     </div>
                   ) : (
-                    <p>
-                      Select a recipe and generate a forecast to see results
-                    </p>
+                    <p>Select a recipe and generate a forecast to see results</p>
                   )}
                 </div>
               )}

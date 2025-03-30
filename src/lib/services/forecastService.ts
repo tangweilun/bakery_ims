@@ -257,7 +257,7 @@ export const forecastService = {
    */
   generateForecast: async (
     salesData: AggregatedSalesData,
-    daysToForecast: number = 7, // Changed from 30 to 7 to match UI
+    daysToForecast: number = 7,
     windowSize: number = 7
   ): Promise<ForecastResult> => {
     console.log("[DEBUG] Starting forecast generation:", {
@@ -344,13 +344,18 @@ export const forecastService = {
       // Clean up model when done
       model.dispose();
 
-      // Save forecast with calculated confidence level
+      // Save forecast with calculated confidence level and time series data
       await forecastService.saveForecast(
         salesData.recipeId,
+        salesData.recipeName,
         futureDates[0],
         futureDates[futureDates.length - 1],
         predictions.reduce((sum, val) => sum + val, 0),
-        accuracy
+        accuracy,
+        // Add time series data
+        [...salesData.dates, ...futureDates],
+        [...quantities, ...Array(daysToForecast).fill(null)],
+        [...Array(quantities.length).fill(null), ...predictions]
       );
 
       return {
@@ -375,22 +380,36 @@ export const forecastService = {
    */
   saveForecast: async (
     recipeId: number,
+    recipeName: string, // Add recipe name parameter
     startDate: string,
     endDate: string,
     forecastQuantity: number,
-    confidenceLevel: number
+    confidenceLevel: number,
+    // Add time series data parameters
+    dates: string[],
+    actualQuantities: (number | null)[],
+    predictedQuantities: (number | null)[]
   ): Promise<void> => {
     console.log("[DEBUG] Saving forecast:", {
       recipeId,
       startDate,
       endDate,
       forecastQuantity,
-      confidenceLevel: confidenceLevel.toFixed(4), // Show confidence level with 4 decimal places
-      confidence_percentage: `${(confidenceLevel * 100).toFixed(2)}%`, // Show as percentage for clarity
+      confidenceLevel: confidenceLevel.toFixed(4),
+      confidence_percentage: `${(confidenceLevel * 100).toFixed(2)}%`,
     });
+
+    // Create a time series data object
+    const timeSeriesData = {
+      dates,
+      actualQuantities,
+      predictedQuantities,
+    };
+
     await prisma.demandForecast.create({
       data: {
         recipeId,
+        recipeName, // Store the recipe name
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         forecastQuantity,
@@ -399,6 +418,8 @@ export const forecastService = {
           method: "tensorflow",
           model: "LSTM",
         }),
+        // Store time series data as JSON string
+        timeSeriesData: JSON.stringify(timeSeriesData),
       },
     });
   },

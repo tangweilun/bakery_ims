@@ -15,6 +15,11 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { ForecastChart } from "@/components/forecasts/ForecastChart";
+import { ForecastTable } from "@/components/forecasts/ForecastTable";
+import { IngredientRequirementsChart } from "@/components/forecasts/IngredientRequirementsChart";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MainNav } from "@/components/main-nav";
+import { UserNav } from "@/components/user-nav";
 
 interface ForecastDetail {
   id: number;
@@ -32,11 +37,25 @@ interface ForecastDetail {
   recipeName: string;
 }
 
+interface IngredientRequirement {
+  id: number;
+  name: string;
+  unit: string;
+  requiredAmount: number;
+  currentStock: number;
+  category: string;
+}
+
 export default function ForecastDetailPage() {
   const params = useParams();
   const [forecast, setForecast] = useState<ForecastDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ingredientRequirements, setIngredientRequirements] = useState<
+    IngredientRequirement[]
+  >([]);
+  const [isLoadingIngredients, setIsLoadingIngredients] =
+    useState<boolean>(false);
 
   useEffect(() => {
     const fetchForecastDetail = async () => {
@@ -60,31 +79,89 @@ export default function ForecastDetailPage() {
     }
   }, [params.id]);
 
+  // Fetch ingredient requirements when forecast data is loaded
+  useEffect(() => {
+    const fetchIngredientRequirements = async () => {
+      if (!forecast) return;
+
+      setIsLoadingIngredients(true);
+      try {
+        const response = await fetch("/api/ingredient-requirements", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recipeId: forecast.recipeId,
+            forecastQuantity: forecast.forecastQuantity,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch ingredient requirements");
+        }
+
+        const data = await response.json();
+        setIngredientRequirements(data.requirements);
+      } catch (err) {
+        console.error("Error fetching ingredient requirements:", err);
+        toast.error("Failed to load ingredient requirements");
+      } finally {
+        setIsLoadingIngredients(false);
+      }
+    };
+
+    if (forecast) {
+      fetchIngredientRequirements();
+    }
+  }, [forecast]);
+
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6 flex justify-center items-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex min-h-screen flex-col">
+        <div className="border-b">
+          <div className="flex h-16 items-center px-4">
+            <MainNav className="mx-6" />
+            <div className="ml-auto flex items-center space-x-4">
+              <UserNav />
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex justify-center items-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
       </div>
     );
   }
 
   if (error || !forecast) {
     return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <p className="text-red-500 mb-4">
-                {error || "Forecast not found"}
-              </p>
-              <Button asChild>
-                <Link href="/dashboard/forecasts/saved">
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Forecasts
-                </Link>
-              </Button>
+      <div className="flex min-h-screen flex-col">
+        <div className="border-b">
+          <div className="flex h-16 items-center px-4">
+            <MainNav className="mx-6" />
+            <div className="ml-auto flex items-center space-x-4">
+              <UserNav />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div className="flex-1 p-8 pt-6">
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center">
+                <p className="text-red-500 mb-4">
+                  {error || "Forecast not found"}
+                </p>
+                <Button asChild>
+                  <Link href="/forecasts/saved">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Forecasts
+                    History
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -92,105 +169,153 @@ export default function ForecastDetailPage() {
   const factorsObj = forecast.factors ? JSON.parse(forecast.factors) : {};
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Forecast Details</h1>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard/forecasts/saved">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Forecasts
-          </Link>
-        </Button>
+    <div className="flex min-h-screen flex-col">
+      <div className="border-b">
+        <div className="flex h-16 items-center px-4">
+          <MainNav className="mx-6" />
+          <div className="ml-auto flex items-center space-x-4">
+            <UserNav />
+          </div>
+        </div>
       </div>
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">
+            Forecast Details
+          </h2>
+          <Button variant="outline" asChild>
+            <Link href="/forecasts/saved">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Forecasts History
+            </Link>
+          </Button>
+        </div>
 
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Forecast Visualization</CardTitle>
-            <CardDescription>
-              Visual representation of actual and predicted sales
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ForecastChart
-              data={{
-                dates: forecast.dates,
-                actualQuantities: forecast.actualQuantities,
-                predictedQuantities: forecast.predictedQuantities,
-                recipeName: forecast.recipeName,
-                confidenceLevel: forecast.confidenceLevel || 0,
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Overview</CardTitle>
-            <CardDescription>Basic forecast information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Period</dt>
-                <dd className="mt-1">
-                  {format(parseISO(forecast.startDate), "MMM d, yyyy")} -{" "}
-                  {format(parseISO(forecast.endDate), "MMM d, yyyy")}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">
-                  Forecast Quantity
-                </dt>
-                <dd className="mt-1">{forecast.forecastQuantity.toFixed(0)}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">
-                  Confidence
-                </dt>
-                <dd className="mt-1">
-                  {forecast.confidenceLevel
-                    ? `${(forecast.confidenceLevel * 100).toFixed(0)}%`
-                    : "N/A"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Created</dt>
-                <dd className="mt-1">
-                  {format(parseISO(forecast.createdAt), "MMM d, yyyy HH:mm")}
-                </dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Model Information</CardTitle>
-            <CardDescription>
-              Technical details about the forecast
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-1 gap-4">
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Method</dt>
-                <dd className="mt-1">{factorsObj.method || "N/A"}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">
-                  Model Type
-                </dt>
-                <dd className="mt-1">{factorsObj.model || "N/A"}</dd>
-              </div>
-              {forecast.notes && (
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Forecast Overview</CardTitle>
+              <CardDescription>Basic forecast information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                  <dd className="mt-1">{forecast.notes}</dd>
+                  <dt className="text-sm font-medium text-gray-500">Recipe</dt>
+                  <dd className="mt-1 font-medium">{forecast.recipeName}</dd>
                 </div>
-              )}
-            </dl>
-          </CardContent>
-        </Card>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Period</dt>
+                  <dd className="mt-1">
+                    {format(parseISO(forecast.startDate), "MMM d, yyyy")} -{" "}
+                    {format(parseISO(forecast.endDate), "MMM d, yyyy")}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    Forecast Quantity
+                  </dt>
+                  <dd className="mt-1">
+                    {forecast.forecastQuantity.toFixed(0)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    Confidence Level
+                  </dt>
+                  <dd className="mt-1">
+                    {forecast.confidenceLevel
+                      ? `${(forecast.confidenceLevel * 100).toFixed(2)}%`
+                      : "N/A"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    Forecast Method
+                  </dt>
+                  <dd className="mt-1">
+                    {factorsObj.method || "Standard"} (
+                    {factorsObj.model || "N/A"})
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    Created At
+                  </dt>
+                  <dd className="mt-1">
+                    {format(parseISO(forecast.createdAt), "MMM d, yyyy h:mm a")}
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Forecast Visualization</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="chart">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="chart">Chart</TabsTrigger>
+                  <TabsTrigger value="table">Table</TabsTrigger>
+                  <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chart">
+                  <ForecastChart
+                    data={{
+                      dates: forecast.dates,
+                      actualQuantities: forecast.actualQuantities,
+                      predictedQuantities: forecast.predictedQuantities,
+                      recipeName: forecast.recipeName,
+                      confidenceLevel: forecast.confidenceLevel || 0,
+                    }}
+                  />
+                </TabsContent>
+
+                <TabsContent value="table">
+                  <ForecastTable
+                    data={{
+                      dates: forecast.dates,
+                      actualQuantities: forecast.actualQuantities,
+                      predictedQuantities: forecast.predictedQuantities,
+                      recipeName: forecast.recipeName,
+                      // Remove confidenceLevel since it's not in the expected type
+                    }}
+                  />
+                </TabsContent>
+
+                <TabsContent value="ingredients">
+                  {isLoadingIngredients ? (
+                    <div className="flex justify-center items-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin mr-2" />
+                      <span>Loading ingredient requirements...</span>
+                    </div>
+                  ) : ingredientRequirements.length > 0 ? (
+                    <IngredientRequirementsChart
+                      data={ingredientRequirements}
+                      recipeName={forecast.recipeName}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No ingredient data available for this recipe.
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {forecast.notes && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-line">{forecast.notes}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
