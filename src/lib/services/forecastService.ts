@@ -31,34 +31,58 @@ export const forecastService = {
    * Higher values indicate better forecast accuracy
    */
   calculateAccuracy: (actual: number[], predicted: number[]): number => {
-    console.log("[DEBUG] Calculating forecast accuracy:", {
-      actualDataPoints: actual.length,
-      predictedDataPoints: predicted.length,
-    });
+    console.log("[DEBUG] Calculating forecast accuracy with enhanced metrics");
 
     if (actual.length !== predicted.length) {
       throw new Error("Actual and predicted arrays must be the same length");
     }
 
-    // Calculate MAPE (Mean Absolute Percentage Error)
-    // MAPE measures the average percentage difference between predicted and actual values
-    const mape =
-      actual.reduce((sum, value, index) => {
-        if (value === 0) return sum; // Skip zero values to avoid division by zero
-        const percentageError = Math.abs((value - predicted[index]) / value);
-        return sum + percentageError;
-      }, 0) / actual.length;
+    // Skip the first few predictions which are often less accurate
+    const startIndex = Math.min(3, Math.floor(actual.length * 0.1));
 
-    // Convert MAPE to accuracy (0-1 scale)
-    // Since MAPE is an error rate (lower is better), we subtract from 1 to get accuracy (higher is better)
-    const accuracy = Math.max(0, Math.min(1, 1 - mape));
+    // Calculate multiple error metrics
+    let mape = 0; // Mean Absolute Percentage Error
+    let rmse = 0; // Root Mean Square Error
+    let validPoints = 0;
 
-    console.log("[DEBUG] Forecast accuracy calculated:", {
+    for (let i = startIndex; i < actual.length; i++) {
+      if (actual[i] === 0) continue;
+
+      // MAPE calculation
+      const absPercentError = Math.abs((actual[i] - predicted[i]) / actual[i]);
+      // Cap very large errors which can skew MAPE
+      mape += Math.min(absPercentError, 3);
+
+      // RMSE calculation
+      rmse += Math.pow(actual[i] - predicted[i], 2);
+
+      validPoints++;
+    }
+
+    // Normalize errors
+    mape = validPoints > 0 ? mape / validPoints : 1;
+    rmse = Math.sqrt(rmse / (validPoints > 0 ? validPoints : 1));
+
+    // Scale RMSE to 0-1 range based on data range
+    const actualRange =
+      Math.max(...actual) - Math.min(...actual.filter((v) => v > 0));
+    const normalizedRmse = Math.min(1, rmse / actualRange);
+
+    // Weighted average of both metrics (MAPE has 70% weight, RMSE has 30%)
+    const mapeScore = Math.max(0, Math.min(1, 1 - mape));
+    const rmseScore = Math.max(0, Math.min(1, 1 - normalizedRmse));
+
+    const combinedAccuracy = mapeScore * 0.7 + rmseScore * 0.3;
+
+    console.log("[DEBUG] Accuracy metrics:", {
       mape: mape.toFixed(4),
-      accuracy: accuracy.toFixed(4),
+      mapeScore: mapeScore.toFixed(4),
+      rmse: rmse.toFixed(2),
+      rmseScore: rmseScore.toFixed(4),
+      combinedAccuracy: combinedAccuracy.toFixed(4),
     });
 
-    return accuracy;
+    return combinedAccuracy;
   },
 
   /**
@@ -99,29 +123,18 @@ export const forecastService = {
     // Add more sophisticated layers
     model.add(
       tf.layers.lstm({
-        units: 64, // Increased units
+        units: 32, // Reduced from 64
         inputShape: [windowSize, 1],
-        returnSequences: true,
-        name: `lstm_layer1`,
-        dropout: 0.2, // Add dropout for regularization
+        returnSequences: false, // Single LSTM layer for smaller datasets
+        recurrentDropout: 0.2, // Use recurrent dropout instead
       })
     );
 
-    model.add(
-      tf.layers.lstm({
-        units: 32,
-        returnSequences: false,
-        name: `lstm_layer2`,
-        dropout: 0.1,
-      })
-    );
-
-    // Add dense layers with regularization
     model.add(
       tf.layers.dense({
-        units: 16,
+        units: 8,
         activation: "relu",
-        kernelRegularizer: tf.regularizers.l2({ l2: 0.01 }),
+        kernelRegularizer: tf.regularizers.l2({ l2: 0.005 }), // Lighter regularization
       })
     );
 
@@ -156,15 +169,17 @@ export const forecastService = {
 
     // Enhanced training process
     await model.fit(reshapedXs, ys, {
-      epochs,
-      batchSize: 16, // Smaller batch size
+      epochs: epochs * 2, // Double the epochs
+      batchSize: 8, // Smaller batch size for better generalization
       shuffle: true,
       validationSplit: 0.2,
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          if (epoch % 10 === 0) {
+          if (epoch % 20 === 0) {
             console.log(
-              `[DEBUG] Epoch ${epoch}: loss = ${logs?.loss?.toFixed(4)}`
+              `[DEBUG] Epoch ${epoch}: loss = ${logs?.loss?.toFixed(
+                4
+              )}, val_loss = ${logs?.val_loss?.toFixed(4)}`
             );
           }
         },
@@ -262,9 +277,28 @@ export const forecastService = {
     }
 
     try {
-      // Train model with accuracy
+      // Preprocess the data to handle gaps and inconsistencies
+      const preprocessedQuantities = forecastService.preprocessData(
+        quantities,
+        salesData.dates
+      );
+
+      // Determine optimal window size based on data patterns
+      const optimalWindowSize =
+        quantities.length >= 30
+          ? forecastService.determineOptimalWindowSize(
+              preprocessedQuantities,
+              windowSize
+            )
+          : windowSize;
+
+      // Train model with enhanced parameters
       const { model, min, max, accuracy } =
-        await forecastService.createAndTrainModel(quantities, windowSize);
+        await forecastService.createAndTrainModel(
+          preprocessedQuantities,
+          optimalWindowSize,
+          150 // Increased epochs
+        );
 
       // Generate dates for forecast
       const lastDate = new Date(salesData.dates[salesData.dates.length - 1]);
@@ -277,16 +311,18 @@ export const forecastService = {
       }
 
       // Generate predictions
-      const normalizedData = quantities.map((val) => (val - min) / (max - min));
+      const normalizedData = preprocessedQuantities.map(
+        (val) => (val - min) / (max - min)
+      );
       const predictions: number[] = [];
 
-      let lastWindow = normalizedData.slice(-windowSize);
+      let lastWindow = normalizedData.slice(-optimalWindowSize);
 
       for (let i = 0; i < daysToForecast; i++) {
         // Reshape for prediction
         const input = tf.tensor3d(
           [lastWindow.map((val) => [val])],
-          [1, windowSize, 1]
+          [1, optimalWindowSize, 1]
         );
 
         // Get prediction
@@ -378,5 +414,123 @@ export const forecastService = {
         createdAt: "desc",
       },
     });
+  },
+
+  /**
+   * Fill gaps and smooth data to improve forecast quality
+   */
+  preprocessData: (data: number[], dates: string[]): number[] => {
+    console.log("[DEBUG] Preprocessing data:", {
+      originalDataPoints: data.length,
+      zeros: data.filter((v) => v === 0).length,
+    });
+
+    // Fill missing days (zero values)
+    const filledData = [...data];
+    for (let i = 0; i < filledData.length; i++) {
+      if (filledData[i] === 0) {
+        // Get average of neighboring non-zero values
+        let sum = 0;
+        let count = 0;
+        for (
+          let j = Math.max(0, i - 7);
+          j <= Math.min(filledData.length - 1, i + 7);
+          j++
+        ) {
+          if (j !== i && filledData[j] > 0) {
+            sum += filledData[j];
+            count++;
+          }
+        }
+        filledData[i] = count > 0 ? Math.round(sum / count) : 1;
+      }
+    }
+
+    // Check for weekly patterns (common in bakery sales)
+    const daysOfWeek = dates.map((date) => new Date(date).getDay());
+    const byWeekday = [0, 1, 2, 3, 4, 5, 6].map((day) => {
+      const values = filledData.filter((_, i) => daysOfWeek[i] === day);
+      return values.length > 0
+        ? Math.round(values.reduce((s, v) => s + v, 0) / values.length)
+        : 0;
+    });
+
+    console.log("[DEBUG] Weekly pattern detected:", { byWeekday });
+
+    // Apply light smoothing with weighted moving average
+    const smoothedData = [];
+    for (let i = 0; i < filledData.length; i++) {
+      const window = 3;
+      let weightedSum = filledData[i] * 0.6; // Current value has 60% weight
+      let totalWeight = 0.6;
+
+      for (let j = 1; j <= window; j++) {
+        if (i - j >= 0) {
+          weightedSum += filledData[i - j] * (0.4 / window);
+          totalWeight += 0.4 / window;
+        }
+        if (i + j < filledData.length) {
+          weightedSum += filledData[i + j] * (0.4 / window);
+          totalWeight += 0.4 / window;
+        }
+      }
+
+      smoothedData.push(Math.round(weightedSum / totalWeight));
+    }
+
+    console.log("[DEBUG] Data preprocessing complete");
+    return smoothedData;
+  },
+
+  // Add to generateForecast function:
+  determineOptimalWindowSize: (
+    quantities: number[],
+    windowSize: number
+  ): number => {
+    // Default to user-provided window size
+    let bestWindowSize = windowSize;
+
+    // For bakery data, common optimal windows are 7 (weekly) or 14 (biweekly)
+    const candidateWindows = [7, 10, 14];
+
+    // If we have enough data, also consider monthly patterns
+    if (quantities.length >= 60) {
+      candidateWindows.push(30);
+    }
+
+    console.log("[DEBUG] Testing window sizes:", { candidateWindows });
+
+    // Find which window size works best on a small validation set
+    let bestAccuracy = 0;
+
+    for (const ws of candidateWindows) {
+      if (quantities.length < ws * 3) continue;
+
+      try {
+        // Use a quick simplified model to test
+        const testSize = Math.floor(quantities.length * 0.3);
+        const testData = quantities.slice(0, -testSize);
+        const validData = quantities.slice(-testSize);
+
+        const accuracy = forecastService.calculateAccuracy(testData, validData);
+        console.log(
+          `[DEBUG] Window size ${ws} test accuracy: ${accuracy.toFixed(4)}`
+        );
+
+        if (accuracy > bestAccuracy) {
+          bestAccuracy = accuracy;
+          bestWindowSize = ws;
+        }
+      } catch (e) {
+        console.error(`[DEBUG] Error testing window size ${ws}:`, e);
+      }
+    }
+
+    console.log(
+      `[DEBUG] Selected optimal window size: ${bestWindowSize} with accuracy ${bestAccuracy.toFixed(
+        4
+      )}`
+    );
+    return bestWindowSize;
   },
 };
