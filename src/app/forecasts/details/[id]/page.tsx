@@ -117,6 +117,7 @@ export default function ForecastDetailPage() {
                 actualQuantities: forecast.actualQuantities,
                 predictedQuantities: forecast.predictedQuantities,
                 recipeName: forecast.recipeName,
+                confidenceLevel: forecast.confidenceLevel || 0,
               }}
             />
           </CardContent>

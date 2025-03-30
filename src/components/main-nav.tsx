@@ -23,7 +23,7 @@ export function MainNav({
     { href: "/batches", label: "Batch Tracking" },
     { href: "/yield", label: "Yield Management" },
     { href: "/sales", label: "Sales" },
-    { href: "/forecasting", label: "Forecasting" },
+    { href: "/forecasts", label: "Demand Forecast" },
   ];
 
   const toggleMenu = () => {

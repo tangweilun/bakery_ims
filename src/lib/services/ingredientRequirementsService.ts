@@ -60,7 +60,7 @@ export const ingredientRequirementsService = {
       return requirements;
     } catch (error) {
       console.error("Error calculating ingredient requirements:", error);
-      throw error;
+      throw new Error(error instanceof Error ? error.message : "Unknown error calculating requirements");
     }
   },
 };

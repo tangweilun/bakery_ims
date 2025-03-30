@@ -48,7 +48,16 @@ export function IngredientRequirementsChart({
     datasets: [],
   });
 
+  // Ensure we're handling empty data
   useEffect(() => {
+    if (!data || data.length === 0) {
+      setChartData({
+        labels: [],
+        datasets: [],
+      });
+      return;
+    }
+
     // Sort ingredients by category and name for better visualization
     const sortedData = [...data].sort((a, b) => {
       if (a.category !== b.category) {

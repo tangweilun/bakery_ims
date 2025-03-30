@@ -257,7 +257,7 @@ export const forecastService = {
    */
   generateForecast: async (
     salesData: AggregatedSalesData,
-    daysToForecast: number = 7, // Changed from 30 to 7 to match the UI
+    daysToForecast: number = 7, // Changed from 30 to 7 to match UI
     windowSize: number = 7
   ): Promise<ForecastResult> => {
     console.log("[DEBUG] Starting forecast generation:", {

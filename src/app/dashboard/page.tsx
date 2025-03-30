@@ -6,12 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Overview } from "@/components/overview";
+
 import { RecentActivity } from "@/components/recent-activity";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
-import { ExpiringIngredients } from "@/components/expiring-ingredients";
-import { Package, AlertTriangle, Clock, BookOpen } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Bakery Inventory System",

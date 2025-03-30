@@ -38,7 +38,7 @@ interface ForecastChartProps {
 }
 
 export function ForecastChart({ data }: ForecastChartProps) {
-  const chartRef = useRef<ChartJS>(null);
+  const chartRef = useRef<ChartJS<"line"> | null>(null); // Fix the type here
 
   // Format dates for display
   const formattedDates = data.dates.map((date) =>
