@@ -187,7 +187,10 @@ export default function ForecastsPage() {
                 {isLoading ? (
                   <div className="flex flex-col items-center">
                     <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                    <p>Generating forecast...</p>
+                    <p>
+                      Generating forecast... Please wait a few minutes as the
+                      data is analyzed and predictions are made.
+                    </p>
                   </div>
                 ) : (
                   <p>Select a recipe and generate a forecast to see results</p>
