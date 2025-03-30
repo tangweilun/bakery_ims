@@ -14,7 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { ForecastChart } from "@/components/forecasts/ForecastChart";
 import { ForecastTable } from "@/components/forecasts/ForecastTable";
-import { ForecastControls } from "@/components/forecasts/ForecastControls";
+import { IngredientRequirementsChart } from "@/components/forecasts/IngredientRequirementsChart";
+// Remove ForecastControls import since we're not using it anymore
 
 // Define proper types
 interface Recipe {
@@ -38,19 +39,34 @@ interface ForecastData {
   confidenceLevel: number;
 }
 
+interface IngredientRequirement {
+  id: number;
+  name: string;
+  unit: string;
+  requiredAmount: number;
+  currentStock: number;
+  category: string;
+}
+
 export default function ForecastsPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
   const [forecastData, setForecastData] = useState<ForecastData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [forecastParams, setForecastParams] = useState<ForecastParams>({
-    days: 90,
-    forecastDays: 30,
-    windowSize: 7,
+  // Set fixed values for forecast parameters
+  const [forecastParams] = useState<ForecastParams>({
+    days: 365, // 365 days of historical data
+    forecastDays: 7, // 7 days forecast horizon
+    windowSize: 7, // 7 days window size
     method: "standard",
   });
   const [isLoadingRecipes, setIsLoadingRecipes] = useState<boolean>(true);
+  const [ingredientRequirements, setIngredientRequirements] = useState<
+    IngredientRequirement[]
+  >([]);
+  const [isLoadingIngredients, setIsLoadingIngredients] =
+    useState<boolean>(false);
 
   // Fetch recipes on component mount
   useEffect(() => {
@@ -75,6 +91,56 @@ export default function ForecastsPage() {
 
     fetchRecipes();
   }, []);
+
+  // Calculate ingredient requirements when forecast data is available
+  useEffect(() => {
+    const calculateIngredientRequirements = async () => {
+      if (!forecastData) return;
+
+      setIsLoadingIngredients(true);
+      try {
+        // Calculate total forecasted quantity for the next 7 days
+        const forecastedQuantities = forecastData.predictedQuantities.filter(
+          (q) => q !== null
+        ) as number[];
+
+        // Sum up the forecasted quantities
+        const totalForecastedQuantity = forecastedQuantities.reduce(
+          (sum, qty) => sum + qty,
+          0
+        );
+
+        // Fetch ingredient requirements
+        const response = await fetch("/api/ingredient-requirements", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recipeId: forecastData.recipeId,
+            forecastQuantity: totalForecastedQuantity,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "Failed to calculate ingredient requirements"
+          );
+        }
+
+        const data = await response.json();
+        setIngredientRequirements(data.requirements);
+      } catch (err) {
+        console.error("Error calculating ingredient requirements:", err);
+        // Don't set error state here to avoid overriding forecast errors
+      } finally {
+        setIsLoadingIngredients(false);
+      }
+    };
+
+    calculateIngredientRequirements();
+  }, [forecastData]);
 
   const generateForecast = async () => {
     if (!selectedRecipeId) {
@@ -180,15 +246,24 @@ export default function ForecastsPage() {
                 </Select>
               </div>
 
-              <ForecastControls
-                params={forecastParams}
-                onChange={setForecastParams}
-              />
+              {/* Information about forecast parameters */}
+              <div className="text-sm text-gray-500 mt-4">
+                <p>About Forecast:</p>
+                <ul className="list-disc pl-5 mt-2">
+                  <li>365 days of historical sales data</li>
+                  <li>Forecasted sales for the next 7 days</li>
+                  <li>
+                    Applied LSTM, LSTM (Long Short-Term Memory) is a type of
+                    artificial intelligence that helps computers remember
+                    important past information to make better predictions.
+                  </li>
+                </ul>
+              </div>
 
               <Button
                 onClick={generateForecast}
                 disabled={isLoading || !selectedRecipeId}
-                className="w-full"
+                className="w-full mt-4"
               >
                 {isLoading ? (
                   <>
@@ -217,12 +292,30 @@ export default function ForecastsPage() {
                 <TabsList className="mb-4">
                   <TabsTrigger value="chart">Chart</TabsTrigger>
                   <TabsTrigger value="table">Table</TabsTrigger>
+                  <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
                 </TabsList>
                 <TabsContent value="chart">
                   <ForecastChart data={forecastData} />
                 </TabsContent>
                 <TabsContent value="table">
                   <ForecastTable data={forecastData} />
+                </TabsContent>
+                <TabsContent value="ingredients">
+                  {isLoadingIngredients ? (
+                    <div className="flex flex-col items-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                      <p>Calculating ingredient requirements...</p>
+                    </div>
+                  ) : ingredientRequirements.length > 0 ? (
+                    <IngredientRequirementsChart
+                      data={ingredientRequirements}
+                      recipeName={forecastData.recipeName}
+                    />
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <p>No ingredient data available for this recipe</p>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             ) : (

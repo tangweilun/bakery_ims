@@ -33,6 +33,7 @@ interface ForecastChartProps {
     actualQuantities: (number | null)[];
     predictedQuantities: (number | null)[];
     recipeName: string;
+    confidenceLevel: number;
   };
 }
 
@@ -48,6 +49,9 @@ export function ForecastChart({ data }: ForecastChartProps) {
   const predictionStartIndex = data.actualQuantities.findIndex(
     (q) => q === null
   );
+
+  // Format confidence level as percentage
+  const confidencePercentage = Math.round(data.confidenceLevel * 100);
 
   const chartData: ChartData<"line"> = {
     labels: formattedDates,
@@ -81,7 +85,10 @@ export function ForecastChart({ data }: ForecastChartProps) {
       },
       title: {
         display: true,
-        text: `Sales Forecast for ${data.recipeName}`,
+        text: `Sales Forecast for ${data.recipeName} (${confidencePercentage}% Confidence)`,
+        font: {
+          size: 16,
+        },
       },
       tooltip: {
         callbacks: {
@@ -123,16 +130,6 @@ export function ForecastChart({ data }: ForecastChartProps) {
     },
   };
 
-  // // Add annotation to show where forecast begins
-  // useEffect(() => {
-  //   if (chartRef.current && predictionStartIndex > 0) {
-  //     const chart = chartRef.current;
-
-  //     // Add a vertical line annotation plugin if needed
-  //     // This would require additional setup with chartjs-plugin-annotation
-  //   }
-  // }, [predictionStartIndex]);
-
   // Add useEffect for debugging specific variables
   useEffect(() => {
     console.log("[DEBUG] ForecastChart data:", {
@@ -141,6 +138,7 @@ export function ForecastChart({ data }: ForecastChartProps) {
       predictedQuantities: data.predictedQuantities,
       predictionStartIndex,
       recipeName: data.recipeName,
+      confidenceLevel: data.confidenceLevel,
     });
 
     // Log specific variable calculations
@@ -154,13 +152,56 @@ export function ForecastChart({ data }: ForecastChartProps) {
     });
   }, [data, predictionStartIndex]);
 
+  // Get confidence level description based on percentage
+  const getConfidenceDescription = (level: number): string => {
+    if (level >= 0.8) return "Very High";
+    if (level >= 0.6) return "High";
+    if (level >= 0.4) return "Moderate";
+    if (level >= 0.2) return "Low";
+    return "Very Low";
+  };
+
   return (
-    <div className="h-[400px]">
-      <Line
-        ref={chartRef as React.RefObject<ChartJS<"line">>}
-        data={chartData}
-        options={chartOptions}
-      />
+    <div>
+      <div className="h-[400px]">
+        <Line
+          ref={chartRef as React.RefObject<ChartJS<"line">>}
+          data={chartData}
+          options={chartOptions}
+        />
+      </div>
+      
+      {/* Confidence level explanation */}
+      <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
+        <h3 className="text-sm font-medium mb-2">About Forecast Confidence</h3>
+        <div className="flex items-center mb-2">
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className={`h-2.5 rounded-full ${
+                confidencePercentage >= 70 ? 'bg-green-600' : 
+                confidencePercentage >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+              }`} 
+              style={{ width: `${confidencePercentage}%` }}
+            ></div>
+          </div>
+          <span className="ml-2 text-sm font-medium">{confidencePercentage}%</span>
+        </div>
+        <p className="text-sm text-gray-600">
+          <span className="font-medium">
+            {getConfidenceDescription(data.confidenceLevel)} Confidence:
+          </span>{' '}
+          This forecast has a {confidencePercentage}% confidence level, indicating 
+          {data.confidenceLevel >= 0.6 
+            ? " high reliability based on historical sales patterns." 
+            : data.confidenceLevel >= 0.4 
+              ? " moderate reliability. Consider additional factors when planning." 
+              : " lower reliability. Use with caution and consider other business factors."
+          }
+        </p>
+        <p className="text-sm text-gray-600 mt-1">
+          The confidence level is calculated by analyzing how well the model predicts known historical data.
+        </p>
+      </div>
     </div>
   );
 }

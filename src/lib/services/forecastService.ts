@@ -169,7 +169,7 @@ export const forecastService = {
 
     // Enhanced training process
     await model.fit(reshapedXs, ys, {
-      epochs: epochs * 2, // Double the epochs
+      epochs: epochs, // Changed from epochs * 2 to just epochs
       batchSize: 8, // Smaller batch size for better generalization
       shuffle: true,
       validationSplit: 0.2,
@@ -257,7 +257,7 @@ export const forecastService = {
    */
   generateForecast: async (
     salesData: AggregatedSalesData,
-    daysToForecast: number = 30,
+    daysToForecast: number = 7, // Changed from 30 to 7 to match the UI
     windowSize: number = 7
   ): Promise<ForecastResult> => {
     console.log("[DEBUG] Starting forecast generation:", {
@@ -297,7 +297,7 @@ export const forecastService = {
         await forecastService.createAndTrainModel(
           preprocessedQuantities,
           optimalWindowSize,
-          150 // Increased epochs
+          100 // Changed from 150 to 100
         );
 
       // Generate dates for forecast

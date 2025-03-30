@@ -32,7 +32,12 @@ export async function POST(request: NextRequest) {
   console.log("[DEBUG] POST /api/forecasts - Request received");
   try {
     const body = await request.json();
-    const { recipeId, days = 90, forecastDays = 30, windowSize = 7 } = body;
+    // Extract recipeId but use fixed values for other parameters
+    const { recipeId } = body;
+    // Fixed parameters as requested
+    const days = 365;
+    const forecastDays = 7;
+    const windowSize = 7;
 
     console.log(
       `[DEBUG] Forecast request params: recipeId=${recipeId}, days=${days}, forecastDays=${forecastDays}, windowSize=${windowSize}`
