@@ -16,21 +16,39 @@ import { ForecastChart } from "@/components/forecasts/ForecastChart";
 import { ForecastTable } from "@/components/forecasts/ForecastTable";
 import { ForecastControls } from "@/components/forecasts/ForecastControls";
 
+// Define proper types
 interface Recipe {
   id: number;
   name: string;
 }
 
+interface ForecastParams {
+  days: number;
+  forecastDays: number;
+  windowSize: number;
+  method?: string;
+}
+
+interface ForecastData {
+  recipeId: number;
+  recipeName: string;
+  dates: string[];
+  actualQuantities: (number | null)[];
+  predictedQuantities: (number | null)[];
+  confidenceLevel: number;
+}
+
 export default function ForecastsPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
-  const [forecastData, setForecastData] = useState<any>(null);
+  const [forecastData, setForecastData] = useState<ForecastData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [forecastParams, setForecastParams] = useState({
+  const [forecastParams, setForecastParams] = useState<ForecastParams>({
     days: 90,
     forecastDays: 30,
     windowSize: 7,
+    method: "standard",
   });
   const [isLoadingRecipes, setIsLoadingRecipes] = useState<boolean>(true);
 
@@ -40,10 +58,15 @@ export default function ForecastsPage() {
       setIsLoadingRecipes(true);
       try {
         const response = await fetch("/api/recipes");
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error("Failed to fetch recipes");
+        }
+        const data = (await response.json()) as Recipe[];
         setRecipes(data);
       } catch (err) {
-        setError("Failed to fetch recipes");
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch recipes"
+        );
         console.error(err);
       } finally {
         setIsLoadingRecipes(false);
@@ -80,7 +103,27 @@ export default function ForecastsPage() {
         throw new Error(data.error || "Failed to generate forecast");
       }
 
-      setForecastData(data.forecast);
+      // Type guard to ensure we have valid forecast data
+      if (!data.forecast || typeof data.forecast !== "object") {
+        throw new Error("Invalid forecast data received");
+      }
+
+      // Ensure all required properties exist in the forecast
+      const requiredProps = [
+        "recipeId",
+        "recipeName",
+        "dates",
+        "actualQuantities",
+        "predictedQuantities",
+        "confidenceLevel",
+      ];
+      for (const prop of requiredProps) {
+        if (!(prop in data.forecast)) {
+          throw new Error(`Forecast data missing required property: ${prop}`);
+        }
+      }
+
+      setForecastData(data.forecast as ForecastData);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"

@@ -30,8 +30,8 @@ ChartJS.register(
 interface ForecastChartProps {
   data: {
     dates: string[];
-    actualQuantities: number[];
-    predictedQuantities: number[];
+    actualQuantities: (number | null)[];
+    predictedQuantities: (number | null)[];
     recipeName: string;
   };
 }
@@ -123,15 +123,36 @@ export function ForecastChart({ data }: ForecastChartProps) {
     },
   };
 
-  // Add annotation to show where forecast begins
-  useEffect(() => {
-    if (chartRef.current && predictionStartIndex > 0) {
-      const chart = chartRef.current;
+  // // Add annotation to show where forecast begins
+  // useEffect(() => {
+  //   if (chartRef.current && predictionStartIndex > 0) {
+  //     const chart = chartRef.current;
 
-      // Add a vertical line annotation plugin if needed
-      // This would require additional setup with chartjs-plugin-annotation
-    }
-  }, [predictionStartIndex]);
+  //     // Add a vertical line annotation plugin if needed
+  //     // This would require additional setup with chartjs-plugin-annotation
+  //   }
+  // }, [predictionStartIndex]);
+
+  // Add useEffect for debugging specific variables
+  useEffect(() => {
+    console.log("[DEBUG] ForecastChart data:", {
+      dates: data.dates.length,
+      actualQuantities: data.actualQuantities,
+      predictedQuantities: data.predictedQuantities,
+      predictionStartIndex,
+      recipeName: data.recipeName,
+    });
+
+    // Log specific variable calculations
+    console.log("[DEBUG] Prediction data:", {
+      firstPredictionDate: data.dates[predictionStartIndex] || "N/A",
+      totalPredictions: data.predictedQuantities.filter((p) => p !== null)
+        .length,
+      maxPredictedValue: Math.max(
+        ...(data.predictedQuantities.filter((p) => p !== null) as number[])
+      ),
+    });
+  }, [data, predictionStartIndex]);
 
   return (
     <div className="h-[400px]">
