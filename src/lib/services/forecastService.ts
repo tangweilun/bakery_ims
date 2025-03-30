@@ -504,15 +504,33 @@ export const forecastService = {
     let bestAccuracy = 0;
 
     for (const ws of candidateWindows) {
+      // Need enough data for training + validation
       if (quantities.length < ws * 3) continue;
 
       try {
-        // Use a quick simplified model to test
+        // Use a simple moving average model to test window sizes
         const testSize = Math.floor(quantities.length * 0.3);
-        const testData = quantities.slice(0, -testSize);
+        const trainData = quantities.slice(0, -testSize);
         const validData = quantities.slice(-testSize);
 
-        const accuracy = forecastService.calculateAccuracy(testData, validData);
+        // Generate simple predictions for validation set
+        const predictions = [];
+
+        for (let i = 0; i < validData.length; i++) {
+          // Use moving average of the last 'ws' points as the prediction
+          const lookback = Math.min(ws, trainData.length + i);
+          const windowData = [...trainData, ...validData.slice(0, i)].slice(
+            -lookback
+          );
+          const avg =
+            windowData.reduce((sum, val) => sum + val, 0) / windowData.length;
+          predictions.push(Math.round(avg));
+        }
+
+        const accuracy = forecastService.calculateAccuracy(
+          validData,
+          predictions
+        );
         console.log(
           `[DEBUG] Window size ${ws} test accuracy: ${accuracy.toFixed(4)}`
         );
