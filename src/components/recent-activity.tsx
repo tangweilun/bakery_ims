@@ -11,36 +11,6 @@ import { toast } from "react-toastify";
  * @param activity - The activity object containing action and details.
  * @returns A formatted summary string.
  */
-interface ActivityDetails {
-  quantity?: number;
-  unit?: string;
-  batchNumber?: string;
-}
-
-function getActivitySummary(activity: Activity) {
-  let details: ActivityDetails = {};
-
-  try {
-    details = JSON.parse(activity.details || "{}") as ActivityDetails;
-  } catch {
-    details = {};
-  }
-
-  switch (activity.action) {
-    case "INGREDIENT_ADDED":
-      return `+${details.quantity || 0}${details.unit || ""}`;
-    case "INGREDIENT_USED":
-      return `-${details.quantity || 0}${details.unit || ""}`;
-    case "PRODUCTION_COMPLETED":
-      return `Batch #${details.batchNumber || ""}`;
-    case "RECIPE_CREATED":
-      return "New Recipe";
-    case "ALERT_GENERATED":
-      return "Alert";
-    default:
-      return "";
-  }
-}
 
 /**
  * Skeleton component to display a placeholder while activities are loading.
@@ -103,7 +73,7 @@ export function RecentActivity() {
   // Display actual activities once loaded
   return (
     <div className="space-y-8">
-      {activities.map((activity, index) => (
+      {activities.map((activity) => (
         <div key={activity.id}>
           <div className="flex items-center">
             <Avatar className="h-9 w-9">
