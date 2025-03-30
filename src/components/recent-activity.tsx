@@ -121,13 +121,7 @@ export function RecentActivity() {
                 {new Date(activity.createdAt).toLocaleString()}
               </p>
             </div>
-            <div className="ml-auto font-medium">
-              {getActivitySummary(activity)}
-            </div>
           </div>
-          {index < activities.length - 1 && (
-            <div className="border-b border-gray-200 my-4" />
-          )}
         </div>
       ))}
     </div>
