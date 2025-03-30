@@ -27,7 +27,7 @@ export const salesService = {
     );
 
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 2000);
+    startDate.setDate(startDate.getDate() - days);
 
     console.log(
       `[DEBUG] getRecipeSalesHistory: Using startDate=${startDate.toISOString()}`

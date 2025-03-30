@@ -32,10 +32,12 @@ export default function ForecastsPage() {
     forecastDays: 30,
     windowSize: 7,
   });
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState<boolean>(true);
 
   // Fetch recipes on component mount
   useEffect(() => {
     const fetchRecipes = async () => {
+      setIsLoadingRecipes(true);
       try {
         const response = await fetch("/api/recipes");
         const data = await response.json();
@@ -43,6 +45,8 @@ export default function ForecastsPage() {
       } catch (err) {
         setError("Failed to fetch recipes");
         console.error(err);
+      } finally {
+        setIsLoadingRecipes(false);
       }
     };
 
@@ -110,7 +114,12 @@ export default function ForecastsPage() {
                     <SelectValue placeholder="Select a recipe" />
                   </SelectTrigger>
                   <SelectContent>
-                    {recipes && recipes.length > 0 ? (
+                    {isLoadingRecipes ? (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="ml-2">Loading recipes...</span>
+                      </div>
+                    ) : recipes.length > 0 ? (
                       recipes.map((recipe) => (
                         <SelectItem
                           key={recipe.id}
