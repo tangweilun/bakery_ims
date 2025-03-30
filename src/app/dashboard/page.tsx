@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { RecentActivity } from "@/components/recent-activity";
+import { ExpiringIngredients } from "@/components/expiring-ingredients";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
 
@@ -30,7 +31,19 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-1">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle>Expiring Ingredients</CardTitle>
+              <CardDescription>
+                Ingredients expiring within the next 7 days
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ExpiringIngredients />
+            </CardContent>
+          </Card>
+          
           <Card className="col-span-1">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>

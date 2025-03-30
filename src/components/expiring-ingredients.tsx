@@ -1,53 +1,131 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Loader2, AlertTriangle } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+interface ExpiringBatch {
+  id: number;
+  ingredientId: number;
+  quantity: number;
+  unit: string;
+  expiryDate: string;
+  ingredient: {
+    name: string;
+    category: string;
+  };
+}
+
 export function ExpiringIngredients() {
+  const [expiringBatches, setExpiringBatches] = useState<ExpiringBatch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchExpiringBatches = async () => {
+      try {
+        const response = await fetch("/api/batches/expiring");
+        if (!response.ok) {
+          throw new Error("Failed to fetch expiring batches");
+        }
+        const data = await response.json();
+        setExpiringBatches(data.expiringBatches);
+      } catch (err) {
+        console.error("Error fetching expiring batches:", err);
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchExpiringBatches();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-500">
+        <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+        {error}
+      </div>
+    );
+  }
+
+  if (expiringBatches.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No ingredients expiring in the next 7 days.
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center">
-        <div className="ml-4 space-y-1">
-          <p className="text-sm font-medium leading-none">Milk</p>
-          <p className="text-sm text-muted-foreground">Expires in 2 days</p>
-        </div>
-        <div className="ml-auto font-medium">
-          <Badge variant="destructive">Critical</Badge>
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="ml-4 space-y-1">
-          <p className="text-sm font-medium leading-none">Eggs</p>
-          <p className="text-sm text-muted-foreground">Expires in 5 days</p>
-        </div>
-        <div className="ml-auto font-medium">
-          <Badge variant="destructive">Critical</Badge>
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="ml-4 space-y-1">
-          <p className="text-sm font-medium leading-none">Fresh Berries</p>
-          <p className="text-sm text-muted-foreground">Expires in 7 days</p>
-        </div>
-        <div className="ml-auto font-medium">
-          <Badge variant="outline">Warning</Badge>
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="ml-4 space-y-1">
-          <p className="text-sm font-medium leading-none">Cream Cheese</p>
-          <p className="text-sm text-muted-foreground">Expires in 10 days</p>
-        </div>
-        <div className="ml-auto font-medium">
-          <Badge variant="outline">Notice</Badge>
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="ml-4 space-y-1">
-          <p className="text-sm font-medium leading-none">Butter</p>
-          <p className="text-sm text-muted-foreground">Expires in 14 days</p>
-        </div>
-        <div className="ml-auto font-medium">
-          <Badge variant="outline">Notice</Badge>
-        </div>
-      </div>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Ingredient</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Quantity</TableHead>
+            <TableHead>Expiry Date</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {expiringBatches.map((batch) => {
+            const expiryDate = new Date(batch.expiryDate);
+            const today = new Date();
+            const daysUntilExpiry = Math.ceil(
+              (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+            );
+            
+            let status: "default" | "destructive" | "outline" | "secondary" = "default";
+            if (daysUntilExpiry <= 2) {
+              status = "destructive";
+            } else if (daysUntilExpiry <= 4) {
+              status = "secondary";  // Using "secondary" instead of "warning"
+            } else {
+              status = "default";
+            }
+
+            return (
+              <TableRow key={batch.id}>
+                <TableCell className="font-medium">{batch.ingredient.name}</TableCell>
+                <TableCell>{batch.ingredient.category}</TableCell>
+                <TableCell>
+                  {batch.quantity} {batch.unit}
+                </TableCell>
+                <TableCell>{format(new Date(batch.expiryDate), "MMM d, yyyy")}</TableCell>
+                <TableCell>
+                  <Badge variant={status}>
+                    {daysUntilExpiry === 0
+                      ? "Expires today"
+                      : daysUntilExpiry === 1
+                      ? "Expires tomorrow"
+                      : `Expires in ${daysUntilExpiry} days`}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
