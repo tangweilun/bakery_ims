@@ -93,8 +93,7 @@ export async function POST(request: NextRequest) {
     console.log("[DEBUG] Generating forecast with TensorFlow model");
     const forecast = await forecastService.generateForecast(
       aggregatedData,
-      forecastDays,
-      windowSize
+      forecastDays
     );
 
     console.log("[DEBUG] Forecast generated successfully");
