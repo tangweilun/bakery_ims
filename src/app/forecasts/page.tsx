@@ -274,9 +274,9 @@ export default function ForecastsPage() {
                     <li>365 days of historical sales data</li>
                     <li>Forecasted sales for the next 7 days</li>
                     <li>
-                      Applied LSTM, LSTM (Long Short-Term Memory) is a type of
-                      artificial intelligence that helps computers remember
-                      important past information to make better predictions.
+                      An applied feedforward neural network is a type of
+                      artificial neural networkthat helps computers learn by
+                      trial and error to make better predictions.
                     </li>
                   </ul>
                 </div>
