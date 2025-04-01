@@ -6,18 +6,23 @@ import "react-toastify/dist/ReactToastify.css";
 import Providers from "@/lib/provider";
 
 export const metadata: Metadata = {
-  title: "BakeryTrack",
-  description: "Smart Bakery Inventory System",
-  generator: "v0.dev",
+  title: "BakeryTrack - Bakery Inventory Management",
+  description: "Efficiently manage your bakery inventory and forecasting",
+  icons: {
+    icon: "/bakeryTrackLogo.png",
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/bakeryTrackLogo.png" />
+      </head>
       <body>
         <Providers>{children}</Providers>
         <ToastContainer position="bottom-right" theme="light" />
