@@ -201,7 +201,8 @@ export const forecastService = {
   },
 
   generateDates(lastDates: string[], days: number): string[] {
-    const lastDate = new Date(lastDates[lastDates.length - 1]);
+   // const lastDate = new Date(lastDates[lastDates.length - 1]);
+   const lastDate = new Date(); // Use today's date instead of last sales date
     return Array.from({ length: days }, (_, i) => {
       const date = new Date(lastDate);
       date.setDate(date.getDate() + i + 1);
@@ -218,11 +219,14 @@ export const forecastService = {
         ? salesData.quantities.reduce((a, b) => a + b, 0) /
           salesData.quantities.length
         : 10; // Default fallback
-
+    
+    // Generate future dates starting from today
+    const futureDates = this.generateDates(salesData.dates, days);
+    
     return {
       recipeId: salesData.recipeId,
       recipeName: salesData.recipeName,
-      dates: [...salesData.dates, ...this.generateDates(salesData.dates, days)],
+      dates: [...salesData.dates, ...futureDates],
       actualQuantities: [...salesData.quantities, ...Array(days).fill(null)],
       predictedQuantities: [
         ...Array(salesData.quantities.length).fill(null),
