@@ -192,7 +192,7 @@ export function UserNav() {
             </DropdownMenuItem>
           </>
         ) : (
-          <DropdownMenuItem onClick={() => router.push("/login")}>
+          <DropdownMenuItem onClick={() => router.push("/sign-in")}>
             <UserIcon className="mr-2 h-4 w-4" />
             Sign in
           </DropdownMenuItem>
