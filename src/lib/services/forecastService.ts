@@ -148,14 +148,43 @@ export const forecastService = {
     min: number,
     max: number
   ): number {
-    const testInput = normalizedData.slice(-windowSize);
-    const inputTensor = tf.tensor2d([testInput]);
-    const prediction = model.predict(inputTensor) as tf.Tensor;
-    const predValue = prediction.dataSync()[0] * (max - min) + min;
-    const actual = originalData.slice(-1)[0];
-
-    tf.dispose([inputTensor, prediction]);
-    return Math.max(0, 1 - Math.abs(predValue - actual) / actual);
+    // Use a small sample of the data for quick MAE calculation
+    // Take the last few points (up to 10) to evaluate model performance
+    const sampleSize = Math.min(10, originalData.length - windowSize);
+    let totalError = 0;
+    
+    // Calculate MAE on a small sample
+    for (let i = 0; i < sampleSize; i++) {
+      const idx = originalData.length - sampleSize - windowSize + i;
+      if (idx < 0) continue;
+      
+      // Get the window for this prediction
+      const testWindow = normalizedData.slice(idx, idx + windowSize);
+      const inputTensor = tf.tensor2d([testWindow]);
+      
+      // Make prediction
+      const prediction = model.predict(inputTensor) as tf.Tensor;
+      const predValue = prediction.dataSync()[0] * (max - min) + min;
+      
+      // Get actual value
+      const actual = originalData[idx + windowSize];
+      
+      // Calculate absolute error
+      totalError += Math.abs(predValue - actual);
+      
+      // Clean up tensor
+      tf.dispose([inputTensor, prediction]);
+    }
+    
+    // Calculate MAE
+    const mae = totalError / sampleSize;
+    
+    // Convert MAE to a confidence score between 0 and 1
+    // Lower MAE means higher confidence
+    // Use a simple formula: confidence = 1 / (1 + mae)
+    const confidence = 1 / (1 + mae);
+    
+    return Math.max(0, Math.min(1, confidence)); // Ensure between 0 and 1
   },
 
   async predictFuture(
