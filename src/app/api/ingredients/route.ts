@@ -104,19 +104,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Check if the ingredient is below minimum stock and create an alert if needed
-      if (ingredient.currentStock < ingredient.minimumStock) {
-        await tx.lowStockAlert.create({
-          data: {
-            ingredientId: ingredient.id,
-            threshold: ingredient.minimumStock,
-            currentLevel: ingredient.currentStock,
-            status: "PENDING",
-            notes: "Alert automatically generated on ingredient creation",
-          },
-        });
-      }
-
       return ingredient;
     });
 

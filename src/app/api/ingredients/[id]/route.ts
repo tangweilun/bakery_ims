@@ -67,28 +67,6 @@ export async function PATCH(
         },
       });
 
-      // Handle low stock alerts
-      if (ingredient.currentStock <= ingredient.minimumStock) {
-        const existingAlert = await tx.lowStockAlert.findFirst({
-          where: {
-            ingredientId: ingredientId,
-            status: { in: ["PENDING", "ACKNOWLEDGED"] },
-          },
-        });
-
-        if (!existingAlert) {
-          await tx.lowStockAlert.create({
-            data: {
-              ingredientId: ingredientId,
-              threshold: ingredient.minimumStock,
-              currentLevel: ingredient.currentStock,
-              status: "PENDING",
-              notes: "Generated after ingredient update",
-            },
-          });
-        }
-      }
-
       return ingredient;
     });
 
@@ -252,13 +230,6 @@ export async function GET(
         batches: {
           orderBy: {
             expiryDate: "asc",
-          },
-        },
-        lowStockAlerts: {
-          where: {
-            status: {
-              in: ["PENDING", "ACKNOWLEDGED"],
-            },
           },
         },
       },
