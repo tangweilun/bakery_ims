@@ -27,17 +27,17 @@ ChartJS.register(
   Legend
 );
 
-interface ForecastChartProps {
-  data: {
-    dates: string[];
-    actualQuantities: (number | null)[];
-    predictedQuantities: (number | null)[];
-    recipeName: string;
-    confidenceLevel: number;
-  };
+// Add predictionStartIndex to the interface
+interface ForecastChartData {
+  dates: string[];
+  actualQuantities: (number | null)[];
+  predictedQuantities: (number | null)[];
+  recipeName: string;
+  confidenceLevel: number;
+  predictionStartIndex?: number; // Add this property as optional
 }
 
-export function ForecastChart({ data }: ForecastChartProps) {
+export function ForecastChart({ data }: { data: ForecastChartData }) {
   const chartRef = useRef<ChartJS<"line"> | null>(null); // Fix the type here
 
   // Format dates for display

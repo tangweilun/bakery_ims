@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { salesService } from "@/lib/services/salesService";
 import { forecastService } from "@/lib/services/forecastService";
+import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   console.log("[DEBUG] GET /api/forecasts - Request received");
   try {
 
