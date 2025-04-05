@@ -41,7 +41,6 @@ model Ingredient {
   batches           Batch[]
   usageRecords      UsageRecord[]
   recipeIngredients RecipeIngredient[]
-  lowStockAlerts    LowStockAlert[]
   activities        Activity[]          // Link to activity log
   
   // Timestamps
@@ -173,27 +172,8 @@ model UsageRecord {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
-model LowStockAlert {
-  id                Int                 @id @default(autoincrement())
-  ingredient        Ingredient          @relation(fields: [ingredientId], references: [id])
-  ingredientId      Int
-  threshold         Float               // The threshold that triggered the alert
-  currentLevel      Float               // Stock level at time of alert
-  status            AlertStatus         @default(PENDING)
-  notes             String?
-  activities        Activity[]          // Link to activity log
-  
-  // Timestamps
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-}
 
-enum AlertStatus {
-  PENDING
-  ACKNOWLEDGED
-  RESOLVED
-  DISMISSED
-}
+
 
 model DemandForecast {
   id                Int                 @id @default(autoincrement())
@@ -306,9 +286,7 @@ model Activity {
 
   usageRecordId     Int?
   usageRecord       UsageRecord? @relation(fields: [usageRecordId], references: [id])
-
-  lowStockAlertId   Int?
-  lowStockAlert     LowStockAlert? @relation(fields: [lowStockAlertId], references: [id])
+ 
 
   saleId            Int?
   sale              Sale? @relation(fields: [saleId], references: [id])
