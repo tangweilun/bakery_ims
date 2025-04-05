@@ -25,19 +25,27 @@ export const forecastService = {
     salesData: AggregatedSalesData,
     daysToForecast: number = 7
   ): Promise<ForecastResult> {
+    console.log("[DEBUG] Starting forecast generation for recipe:", salesData.recipeId);
     const windowSize = 7;
     const quantities = this.simplePreprocess(salesData.quantities);
+    console.log("[DEBUG] Preprocessed quantities length:", quantities.length);
 
     // Use fallback for insufficient data
     if (quantities.length < windowSize * 2) {
+      console.log("[DEBUG] Insufficient data, using fallback forecast");
       return this.fallbackForecast(salesData, daysToForecast);
     }
 
     try {
+      // Clear TensorFlow backend before creating a new model
+      console.log("[DEBUG] Clearing TensorFlow memory before model creation");
+      tf.engine().startScope(); // Start a new scope to track tensors
+      
       const { model, min, max, accuracy } = await this.trainModel(
         quantities,
         windowSize
       );
+      console.log("[DEBUG] Model trained with accuracy:", accuracy);
 
       const predictions = await this.predictFuture(
         model,
@@ -47,6 +55,7 @@ export const forecastService = {
         min,
         max
       );
+      console.log("[DEBUG] Generated predictions:", predictions);
 
       const futureDates = this.generateDates(salesData.dates, daysToForecast);
 
@@ -57,25 +66,42 @@ export const forecastService = {
         accuracy
       );
 
+      // Dispose of the model and end the scope
+      model.dispose();
+      tf.engine().endScope();
+      
+      console.log("[DEBUG] Forecast generation completed successfully");
       return this.formatResult(salesData, futureDates, predictions, accuracy);
     } catch (error) {
-      console.error("Forecast failed, using fallback:", error);
+      console.error("[DEBUG] Forecast failed, using fallback:", error);
+      // Make sure to end the scope even if there's an error
+      tf.engine().endScope();
       return this.fallbackForecast(salesData, daysToForecast);
     }
   },
 
   async trainModel(data: number[], windowSize: number): Promise<TrainedModel> {
+    console.log("[DEBUG] Training model with data length:", data.length);
     const [min, max] = [Math.min(...data), Math.max(...data)];
     const normalized = data.map((v) => (v - min) / (max - min));
 
+    // Use unique names for layers to avoid conflicts
+    const uniqueId = Date.now().toString();
+    console.log("[DEBUG] Creating model with unique ID:", uniqueId);
+    
     const model = tf.sequential({
       layers: [
         tf.layers.dense({
           units: 8,
           inputShape: [windowSize],
           activation: "relu",
+          name: `dense_input_${uniqueId}`,
         }),
-        tf.layers.dense({ units: 1, activation: "linear" }),
+        tf.layers.dense({ 
+          units: 1, 
+          activation: "linear",
+          name: `dense_output_${uniqueId}`,
+        }),
       ],
     });
 
@@ -91,12 +117,14 @@ export const forecastService = {
     const xs = tf.tensor2d(sequences);
     const ys = tf.tensor2d(targets, [targets.length, 1]);
 
+    console.log("[DEBUG] Starting model training");
     await model.fit(xs, ys, {
       epochs: 30,
       batchSize: 8,
       validationSplit: 0.2,
       callbacks: tf.callbacks.earlyStopping({ patience: 3 }),
     });
+    console.log("[DEBUG] Model training completed");
 
     const accuracy = this.calculateQuickAccuracy(
       model,
@@ -107,6 +135,7 @@ export const forecastService = {
       max
     );
 
+    // Clean up tensors
     tf.dispose([xs, ys]);
     return { model, min, max, windowSize, accuracy };
   },
@@ -209,28 +238,56 @@ export const forecastService = {
     predictions: number[],
     accuracy: number
   ): Promise<void> {
-    await prisma.demandForecast.create({
-      data: {
-        recipeId: salesData.recipeId,
-        recipeName: salesData.recipeName,
-        startDate: new Date(futureDates[0]),
-        endDate: new Date(futureDates[futureDates.length - 1]),
-        forecastQuantity: predictions.reduce((a, b) => a + b, 0),
-        confidenceLevel: accuracy,
-        factors: JSON.stringify({ model: "optimized-dense" }),
-        timeSeriesData: JSON.stringify({
-          dates: [...salesData.dates, ...futureDates],
-          actual: [
-            ...salesData.quantities,
-            ...Array(predictions.length).fill(null),
-          ],
-          predicted: [
-            ...Array(salesData.quantities.length).fill(null),
-            ...predictions,
-          ],
-        }),
-      },
-    });
+    console.log("[DEBUG] Saving forecast result for recipe:", salesData.recipeId);
+    console.log("[DEBUG] Future dates range:", futureDates[0], "to", futureDates[futureDates.length - 1]);
+    
+    const forecastQuantity = predictions.reduce((a, b) => a + b, 0);
+    console.log("[DEBUG] Total forecast quantity:", forecastQuantity);
+    
+    // Prepare arrays for the database
+    const actualQuantitiesArray = salesData.quantities.map(q => Math.round(q)); // Convert to integers
+    const predictedQuantitiesArray = predictions.map(p => Math.round(p)); // Convert to integers
+    const allDates = [...salesData.dates, ...futureDates];
+    
+    console.log("[DEBUG] Actual quantities length:", actualQuantitiesArray.length);
+    console.log("[DEBUG] Predicted quantities length:", predictedQuantitiesArray.length);
+    console.log("[DEBUG] All dates length:", allDates.length);
+    
+    // Prepare time series data for backward compatibility
+    const timeSeriesData = {
+      dates: allDates,
+      actual: [
+        ...salesData.quantities,
+        ...Array(predictions.length).fill(null),
+      ],
+      predicted: [
+        ...Array(salesData.quantities.length).fill(null),
+        ...predictions,
+      ],
+    };
+    
+    try {
+      await prisma.demandForecast.create({
+        data: {
+          recipeId: salesData.recipeId,
+          recipeName: salesData.recipeName,
+          startDate: new Date(futureDates[0]),
+          endDate: new Date(futureDates[futureDates.length - 1]),
+          forecastQuantity: forecastQuantity,
+          confidenceLevel: accuracy,
+          factors: JSON.stringify({ model: "optimized-dense" }),
+          timeSeriesData: JSON.stringify(timeSeriesData),
+          // Add the new fields from the updated schema
+          actualQuantities: actualQuantitiesArray,
+          predictedQuantities: predictedQuantitiesArray,
+          dates: allDates,
+        },
+      });
+      console.log("[DEBUG] Forecast successfully saved to database with arrays");
+    } catch (error) {
+      console.error("[DEBUG] Error saving forecast to database:", error);
+      throw error;
+    }
   },
 
   formatResult(
@@ -239,18 +296,29 @@ export const forecastService = {
     predictions: number[],
     accuracy: number
   ): ForecastResult {
+    console.log("[DEBUG] Formatting forecast result");
+    
+    // Create arrays for the response
+    const allDates = [...salesData.dates, ...futureDates];
+    const actualQuantities = [
+      ...salesData.quantities,
+      ...Array(predictions.length).fill(null),
+    ];
+    const predictedQuantities = [
+      ...Array(salesData.quantities.length).fill(null),
+      ...predictions,
+    ];
+    
+    console.log("[DEBUG] Formatted result - dates length:", allDates.length);
+    console.log("[DEBUG] Formatted result - actual quantities length:", actualQuantities.length);
+    console.log("[DEBUG] Formatted result - predicted quantities length:", predictedQuantities.length);
+    
     return {
       recipeId: salesData.recipeId,
       recipeName: salesData.recipeName,
-      dates: [...salesData.dates, ...futureDates],
-      actualQuantities: [
-        ...salesData.quantities,
-        ...Array(predictions.length).fill(null),
-      ],
-      predictedQuantities: [
-        ...Array(salesData.quantities.length).fill(null),
-        ...predictions,
-      ],
+      dates: allDates,
+      actualQuantities: actualQuantities,
+      predictedQuantities: predictedQuantities,
       confidenceLevel: accuracy,
     };
   },
@@ -268,13 +336,5 @@ export const forecastService = {
     }
 
     return [sequences, targets];
-  },
-
-  // Existing database methods
-  async getSavedForecasts(recipeId?: number) {
-    return prisma.demandForecast.findMany({
-      where: recipeId ? { recipeId } : {},
-      orderBy: { createdAt: "desc" },
-    });
   },
 };

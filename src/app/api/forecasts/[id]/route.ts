@@ -33,16 +33,44 @@ export async function GET(
       );
     }
 
-    // Parse the time series data
-    const timeSeriesData = JSON.parse(
-      forecast.timeSeriesData ||
-        '{"dates":[],"actualQuantities":[],"predictedQuantities":[]}'
-    );
+    // Use the direct arrays from the database if available, otherwise fall back to timeSeriesData
+    let dates = forecast.dates || [];
+    let actualQuantities = forecast.actualQuantities || [];
+    let predictedQuantities = forecast.predictedQuantities || [];
+    
+    // If the arrays are empty, try to parse from timeSeriesData for backward compatibility
+    if (dates.length === 0 && forecast.timeSeriesData) {
+      const timeSeriesData = JSON.parse(
+        forecast.timeSeriesData ||
+          '{"dates":[],"actual":[],"predicted":[]}'
+      );
+      
+      dates = timeSeriesData.dates || [];
+      actualQuantities = timeSeriesData.actual || [];
+      predictedQuantities = timeSeriesData.predicted || [];
+    }
+
+    // Calculate the prediction start index - this is where actual data ends
+    // and predictions begin
+    const predictionStartIndex = actualQuantities.length;
+    
+    // Create properly structured arrays for the chart
+    // For actual data: fill with actual values followed by nulls for prediction period
+    const structuredActualQuantities = [
+      ...actualQuantities,
+      ...Array(predictedQuantities.length).fill(null)
+    ];
+    
+    // For predicted data: fill with nulls for historical period, then add predictions
+    const structuredPredictedQuantities = [
+      ...Array(actualQuantities.length).fill(null),
+      ...predictedQuantities
+    ];
 
     // Format the response
     const formattedForecast = {
       id: forecast.id,
-      recipeId: forecast.recipeId || 0,
+      recipeId: forecast.recipe?.id || 0,
       recipeName: forecast.recipeName || forecast.recipe?.name || "Unknown Recipe",
       startDate: forecast.startDate.toISOString(),
       endDate: forecast.endDate.toISOString(),
@@ -51,10 +79,12 @@ export async function GET(
       factors: forecast.factors,
       notes: forecast.notes,
       createdAt: forecast.createdAt.toISOString(),
-      // Include time series data
-      dates: timeSeriesData.dates || [],
-      actualQuantities: timeSeriesData.actualQuantities || [],
-      predictedQuantities: timeSeriesData.predictedQuantities || [],
+      // Use the structured arrays for the chart
+      dates: dates,
+      actualQuantities: structuredActualQuantities,
+      predictedQuantities: structuredPredictedQuantities,
+      // Add the prediction start index to help the chart
+      predictionStartIndex: predictionStartIndex
     };
 
     return NextResponse.json({ forecast: formattedForecast });

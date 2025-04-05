@@ -61,10 +61,34 @@ export default function ForecastDetailPage() {
     const fetchForecastDetail = async () => {
       setIsLoading(true);
       try {
+        console.log("[DEBUG] Fetching forecast details for ID:", params.id);
         const response = await fetch(`/api/forecasts/${params.id}`);
         if (!response.ok) throw new Error("Failed to fetch forecast details");
         const data = await response.json();
-        setForecast(data.forecast);
+        console.log("[DEBUG] Forecast data received:", data);
+        
+        // Extract the forecast object from the response
+        if (data.forecast) {
+          console.log("[DEBUG] Setting forecast with recipeId:", data.forecast.recipeId);
+          
+          // Process the forecast data to ensure proper structure
+          const processedForecast = {
+            ...data.forecast,
+            // Ensure arrays are properly formatted
+            dates: Array.isArray(data.forecast.dates) ? data.forecast.dates : [],
+            actualQuantities: Array.isArray(data.forecast.actualQuantities) 
+              ? data.forecast.actualQuantities 
+              : [],
+            predictedQuantities: Array.isArray(data.forecast.predictedQuantities) 
+              ? data.forecast.predictedQuantities 
+              : []
+          };
+          
+          setForecast(processedForecast);
+        } else {
+          console.log("[DEBUG] No forecast data in response:", data);
+          throw new Error("Invalid forecast data structure");
+        }
       } catch (err) {
         console.error("[DEBUG] Error fetching forecast:", err);
         setError("Failed to load forecast details");
@@ -83,18 +107,26 @@ export default function ForecastDetailPage() {
   useEffect(() => {
     const fetchIngredientRequirements = async () => {
       if (!forecast) return;
-
+      console.log("[DEBUG] Fetching ingredient requirements for recipe:", forecast.recipeId);
       setIsLoadingIngredients(true);
       try {
+        // Calculate total forecasted quantity from the predictedQuantities array
+        const totalForecastQuantity = forecast.predictedQuantities
+          .filter(q => q !== null)
+          .reduce((sum, qty) => sum + (typeof qty === 'number' ? qty : 0), 0);
+        
+        const requestBody = {
+          recipeId: Number(forecast.recipeId),
+          forecastQuantity: totalForecastQuantity > 0 ? totalForecastQuantity : forecast.forecastQuantity,
+        };
+        
+        console.log("[DEBUG] Sending request with body:", requestBody);
         const response = await fetch("/api/ingredient-requirements", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            recipeId: forecast.recipeId,
-            forecastQuantity: forecast.forecastQuantity,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -205,8 +237,14 @@ export default function ForecastDetailPage() {
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Period</dt>
                   <dd className="mt-1">
-                    {format(parseISO(forecast.startDate), "MMM d, yyyy")} -{" "}
-                    {format(parseISO(forecast.endDate), "MMM d, yyyy")}
+                    {forecast.startDate && forecast.endDate ? (
+                      <>
+                        {format(parseISO(forecast.startDate), "MMM d, yyyy")} -{" "}
+                        {format(parseISO(forecast.endDate), "MMM d, yyyy")}
+                      </>
+                    ) : (
+                      "Date range not available"
+                    )}
                   </dd>
                 </div>
                 <div>
@@ -214,7 +252,9 @@ export default function ForecastDetailPage() {
                     Forecast Quantity
                   </dt>
                   <dd className="mt-1">
-                    {forecast.forecastQuantity.toFixed(0)}
+                    {forecast.forecastQuantity !== undefined 
+                      ? forecast.forecastQuantity.toFixed(0)
+                      : "N/A"}
                   </dd>
                 </div>
                 <div>
@@ -241,7 +281,9 @@ export default function ForecastDetailPage() {
                     Created At
                   </dt>
                   <dd className="mt-1">
-                    {format(parseISO(forecast.createdAt), "MMM d, yyyy h:mm a")}
+                    {forecast.createdAt ? 
+                      format(parseISO(forecast.createdAt), "MMM d, yyyy h:mm a") : 
+                      "Not available"}
                   </dd>
                 </div>
               </dl>
@@ -261,15 +303,25 @@ export default function ForecastDetailPage() {
                 </TabsList>
 
                 <TabsContent value="chart">
-                  <ForecastChart
-                    data={{
-                      dates: forecast.dates,
-                      actualQuantities: forecast.actualQuantities,
-                      predictedQuantities: forecast.predictedQuantities,
-                      recipeName: forecast.recipeName,
-                      confidenceLevel: forecast.confidenceLevel || 0,
-                    }}
-                  />
+                  {forecast.dates && forecast.actualQuantities && forecast.predictedQuantities ? (
+                    <ForecastChart
+                      data={{
+                        dates: forecast.dates,
+                        actualQuantities: forecast.actualQuantities,
+                        predictedQuantities: forecast.predictedQuantities,
+                        recipeName: forecast.recipeName,
+                        confidenceLevel: forecast.confidenceLevel || 0,
+                        // Calculate the prediction start index - it's where actual data ends
+                        predictionStartIndex: forecast.actualQuantities.findIndex(q => q === null) !== -1 
+                          ? forecast.actualQuantities.findIndex(q => q === null)
+                          : forecast.actualQuantities.length
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      Chart data is not available
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="table">

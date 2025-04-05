@@ -5,16 +5,10 @@ import { forecastService } from "@/lib/services/forecastService";
 export async function GET(request: NextRequest) {
   console.log("[DEBUG] GET /api/forecasts - Request received");
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const recipeId = searchParams.get("recipeId");
 
-    console.log(
-      `[DEBUG] Fetching forecasts with recipeId filter: ${recipeId || "none"}`
-    );
-
-    const forecasts = await forecastService.getSavedForecasts(
-      recipeId ? parseInt(recipeId) : undefined
-    );
+    const forecasts = await prisma.demandForecast.findMany({
+      orderBy: { createdAt: "desc" },
+    });
 
     console.log(`[DEBUG] Found ${forecasts.length} forecasts`);
 

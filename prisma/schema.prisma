@@ -210,6 +210,11 @@ model DemandForecast {
   // New fields for time series data
   timeSeriesData    String              // JSON string containing dates, actual and predicted quantities
   
+  // Direct access to quantities for easier querying
+  actualQuantities  Int[]               // Array of actual quantities (whole numbers)
+  predictedQuantities Int[]             // Array of predicted quantities (whole numbers)
+  dates             String[]            // Array of date strings for the forecast period
+  
   // Timestamps
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt

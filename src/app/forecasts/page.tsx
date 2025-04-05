@@ -73,6 +73,7 @@ export default function ForecastsPage() {
   // Fetch recipes on component mount
   useEffect(() => {
     const fetchRecipes = async () => {
+      console.log("[DEBUG] Fetching recipes");
       setIsLoadingRecipes(true);
       try {
         const response = await fetch("/api/recipes");
@@ -80,12 +81,14 @@ export default function ForecastsPage() {
           throw new Error("Failed to fetch recipes");
         }
         const data = await response.json();
+        console.log("[DEBUG] Recipes fetched:", data.length);
         setRecipes(data as Recipe[]); // Add type assertion here
       } catch (err) {
+        console.log("[DEBUG] Error fetching recipes:", err);
         setError(
           err instanceof Error ? err.message : "Failed to fetch recipes"
         );
-        console.error(err);
+        console.log(err);
       } finally {
         setIsLoadingRecipes(false);
       }
@@ -99,8 +102,10 @@ export default function ForecastsPage() {
     const calculateIngredientRequirements = async () => {
       if (!forecastData) return;
 
+      console.log("[DEBUG] Calculating ingredient requirements for recipe:", forecastData.recipeId);
       setIsLoadingIngredients(true);
       try {
+        console.log("[DEBUG] Forecast data:", forecastData);
         // Calculate total forecasted quantity for the next 7 days
         const forecastedQuantities = forecastData.predictedQuantities.filter(
           (q) => q !== null
@@ -111,30 +116,48 @@ export default function ForecastsPage() {
           (sum, qty) => sum + qty,
           0
         );
+        
+        console.log("[DEBUG] Total forecasted quantity:", totalForecastedQuantity);
 
         // Fetch ingredient requirements
+        const requestBody = {
+          recipeId: Number(forecastData.recipeId), // Ensure it's a number
+          forecastQuantity: Number(totalForecastedQuantity), // Ensure it's a number
+        };
+        console.log("[DEBUG] Sending request with body:", requestBody);
+        
+        // Add additional validation before sending the request
+        if (!requestBody.recipeId || isNaN(requestBody.recipeId)) {
+          console.log("[DEBUG] Invalid recipeId before sending:", requestBody.recipeId);
+          throw new Error("Invalid recipe ID");
+        }
+        
+        if (!requestBody.forecastQuantity || isNaN(requestBody.forecastQuantity)) {
+          console.log("[DEBUG] Invalid forecastQuantity before sending:", requestBody.forecastQuantity);
+          throw new Error("Invalid forecast quantity");
+        }
+        
         const response = await fetch("/api/ingredient-requirements", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            recipeId: forecastData.recipeId,
-            forecastQuantity: totalForecastedQuantity,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
+          console.log("[DEBUG] API error response:", errorData);
           throw new Error(
             errorData.error || "Failed to calculate ingredient requirements"
           );
         }
 
         const data = await response.json();
+        console.log("[DEBUG] Ingredient requirements received:", data.requirements.length, "items");
         setIngredientRequirements(data.requirements);
       } catch (err) {
-        console.error("Error calculating ingredient requirements:", err);
+        console.log("[DEBUG] Error calculating ingredient requirements:", err);
         // Don't set error state here to avoid overriding forecast errors
       } finally {
         setIsLoadingIngredients(false);
@@ -150,22 +173,27 @@ export default function ForecastsPage() {
       return;
     }
 
+    console.log("[DEBUG] Generating forecast for recipe ID:", selectedRecipeId);
     setIsLoading(true);
     setError(null);
 
     try {
+      const requestBody = {
+        recipeId: parseInt(selectedRecipeId),
+        ...forecastParams,
+      };
+      console.log("[DEBUG] Forecast request body:", requestBody);
+      
       const response = await fetch("/api/forecasts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          recipeId: parseInt(selectedRecipeId),
-          ...forecastParams,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
+      console.log("[DEBUG] Forecast API response:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate forecast");
@@ -173,6 +201,7 @@ export default function ForecastsPage() {
 
       // Type guard to ensure we have valid forecast data
       if (!data.forecast || typeof data.forecast !== "object") {
+        console.log("[DEBUG] Invalid forecast data:", data);
         throw new Error("Invalid forecast data received");
       }
 
@@ -187,12 +216,15 @@ export default function ForecastsPage() {
       ];
       for (const prop of requiredProps) {
         if (!(prop in data.forecast)) {
+          console.log("[DEBUG] Missing property in forecast data:", prop);
           throw new Error(`Forecast data missing required property: ${prop}`);
         }
       }
 
+      console.log("[DEBUG] Setting forecast data with dates:", data.forecast.dates.length);
       setForecastData(data.forecast as ForecastData);
     } catch (err) {
+      console.log("[DEBUG] Error in generateForecast:", err);
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"
       );
