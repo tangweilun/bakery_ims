@@ -10,6 +10,16 @@ export const metadata: Metadata = {
   description: "Efficiently manage your bakery inventory and forecasting",
   icons: {
     icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+    shortcut: "/favicon-16x16.png",
+    other: [
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        url: "/favicon-32x32.png",
+      },
+    ],
   },
 };
 
