@@ -44,9 +44,9 @@ export default function ForgotPassword() {
       }
 
       setMessage("Password recovery link sent! Check your email inbox.");
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       setError(
-        err.message || "An error occurred while sending the recovery link."
+        err instanceof Error ? err.message : "An error occurred while sending the recovery link."
       );
     } finally {
       setLoading(false);
