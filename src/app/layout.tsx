@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "BakeryTrack - Bakery Inventory Management",
   description: "Efficiently manage your bakery inventory and forecasting",
   icons: {
-    icon: "/bakeryTrackLogo.png",
+    icon: "/favicon.ico",
   },
 };
 
