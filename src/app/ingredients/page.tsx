@@ -290,35 +290,29 @@ export default function ManageIngredients() {
 
       {/* Main Content */}
       <div className="container mx-auto py-8 px-4">
-        <Card>
-          {/* Page Header */}
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle className="text-2xl font-bold">
-                Manage Ingredients
-              </CardTitle>
-              <CardDescription>
-                View, edit, and manage your ingredient inventory
-              </CardDescription>
-            </div>
-            <Button asChild>
-              <Link href="/ingredients/create">
-                <Plus className="mr-2 h-4 w-4" /> Add New Ingredient
-              </Link>
-            </Button>
-          </CardHeader>
+        {/* Page Title & Add Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Manage Ingredients</h1>
+          <Button asChild>
+            <Link href="/ingredients/create">
+              <Plus className="mr-2 h-4 w-4" /> Add New Ingredient
+            </Link>
+          </Button>
+        </div>
 
-          {/* Filters Section */}
-          <CardContent className="py-4 space-y-4">
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <Card>
+          {/* Filters moved to Header */}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            {/* Filters Moved to Header */}
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-end flex-grow pl-4">
               {/* Search */}
-              <div className="relative w-full md:w-1/3">
+              <div className="relative w-full md:w-auto">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <Search className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <Input
                   type="text"
-                  className="pl-10"
+                  className="pl-10 w-full md:w-[250px] lg:w-[300px]"
                   placeholder="Search ingredients..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -376,211 +370,219 @@ export default function ManageIngredients() {
                 </Button>
               </div>
             </div>
-          </CardContent>
+          </CardHeader>
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="mt-4 text-muted-foreground">
-                Loading ingredients...
-              </p>
-            </div>
-          )}
-
-          {/* Error State */}
-          {!isLoading && error && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <AlertTriangle className="h-12 w-12 text-destructive" />
-              <h3 className="mt-4 text-lg font-medium">Something went wrong</h3>
-              <p className="mt-2 text-muted-foreground">{error}</p>
-              <Button
-                variant="outline"
-                className="mt-6"
-                onClick={() => window.location.reload()}
-              >
-                Try Again
-              </Button>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!isLoading && !error && filteredIngredients.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="rounded-full bg-muted p-3">
-                {searchTerm || categoryFilter || stockFilter ? (
-                  <Filter className="h-10 w-10 text-muted-foreground" />
-                ) : (
-                  <AlertTriangle className="h-10 w-10 text-amber-500" />
-                )}
+          <CardContent>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">
+                  Loading ingredients...
+                </p>
               </div>
-              <h3 className="mt-4 text-lg font-medium">
-                {searchTerm || categoryFilter || stockFilter
-                  ? "No ingredients match your filters"
-                  : "No ingredients found"}
-              </h3>
-              <p className="mt-2 text-center text-muted-foreground max-w-md">
-                {searchTerm || categoryFilter || stockFilter
-                  ? "Try adjusting your search or filter criteria"
-                  : "Get started by adding your first ingredient"}
-              </p>
-              <div className="mt-6">
-                {searchTerm || categoryFilter || stockFilter ? (
-                  <Button variant="outline" onClick={clearFilters}>
-                    Clear All Filters
-                  </Button>
-                ) : (
-                  <Button asChild>
-                    <Link href="/ingredients/create">
-                      <Plus className="mr-2 h-4 w-4" /> Add Ingredient
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Ingredients Table */}
-          {!isLoading && !error && filteredIngredients.length > 0 && (
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      className="cursor-pointer w-[200px]"
-                      onClick={() => handleSort("name")}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Name</span>
-                        {sortField === "name" && (
-                          <ArrowUpDown className="h-3 w-3 ml-1" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer w-[120px]"
-                      onClick={() => handleSort("category")}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Category</span>
-                        {sortField === "category" && (
-                          <ArrowUpDown className="h-3 w-3 ml-1" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[100px]">Stock</TableHead>
-                    <TableHead
-                      className="cursor-pointer w-[140px]"
-                      onClick={() => handleSort("currentStock")}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Quantity</span>
-                        {sortField === "currentStock" && (
-                          <ArrowUpDown className="h-3 w-3 ml-1" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer w-[100px]"
-                      onClick={() => handleSort("cost")}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Cost</span>
-                        {sortField === "cost" && (
-                          <ArrowUpDown className="h-3 w-3 ml-1" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer w-[140px]"
-                      onClick={() => handleSort("supplier")}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>Supplier</span>
-                        {sortField === "supplier" && (
-                          <ArrowUpDown className="h-3 w-3 ml-1" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right w-[120px]">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredIngredients.map((ingredient) => {
-                    const stockStatus = getStockStatus(ingredient);
-                    return (
-                      <TableRow key={ingredient.id}>
-                        <TableCell className="font-medium">
-                          {ingredient.name}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{ingredient.category}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={stockStatus.className}
-                            variant="outline"
-                          >
-                            {stockStatus.status === "low"
-                              ? "Low Stock"
-                              : stockStatus.status === "normal"
-                              ? "Normal"
-                              : "Ideal"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {ingredient.currentStock} {ingredient.unit}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Min: {ingredient.minimumStock} | Ideal:{" "}
-                            {ingredient.idealStock}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          ${ingredient.cost.toFixed(2)}/{ingredient.unit}
-                        </TableCell>
-                        <TableCell>
-                          {ingredient.supplier?.name || "Not specified"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              asChild
-                              onClick={() => viewIngredientDetails(ingredient)}
+            {/* Error State */}
+            {!isLoading && error && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <AlertTriangle className="h-12 w-12 text-destructive" />
+                <h3 className="mt-4 text-lg font-medium">
+                  Something went wrong
+                </h3>
+                <p className="mt-2 text-muted-foreground">{error}</p>
+                <Button
+                  variant="outline"
+                  className="mt-6"
+                  onClick={() => window.location.reload()}
+                >
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && !error && filteredIngredients.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="rounded-full bg-muted p-3">
+                  {searchTerm || categoryFilter || stockFilter ? (
+                    <Filter className="h-10 w-10 text-muted-foreground" />
+                  ) : (
+                    <AlertTriangle className="h-10 w-10 text-amber-500" />
+                  )}
+                </div>
+                <h3 className="mt-4 text-lg font-medium">
+                  {searchTerm || categoryFilter || stockFilter
+                    ? "No ingredients match your filters"
+                    : "No ingredients found"}
+                </h3>
+                <p className="mt-2 text-center text-muted-foreground max-w-md">
+                  {searchTerm || categoryFilter || stockFilter
+                    ? "Try adjusting your search or filter criteria"
+                    : "Get started by adding your first ingredient"}
+                </p>
+                <div className="mt-6">
+                  {searchTerm || categoryFilter || stockFilter ? (
+                    <Button variant="outline" onClick={clearFilters}>
+                      Clear All Filters
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <Link href="/ingredients/create">
+                        <Plus className="mr-2 h-4 w-4" /> Add Ingredient
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Ingredients Table */}
+            {!isLoading && !error && filteredIngredients.length > 0 && (
+              <div className="overflow-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead
+                        className="cursor-pointer w-[200px]"
+                        onClick={() => handleSort("name")}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Name</span>
+                          {sortField === "name" && (
+                            <ArrowUpDown className="h-3 w-3 ml-1" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer w-[120px]"
+                        onClick={() => handleSort("category")}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Category</span>
+                          {sortField === "category" && (
+                            <ArrowUpDown className="h-3 w-3 ml-1" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="w-[100px]">Stock</TableHead>
+                      <TableHead
+                        className="cursor-pointer w-[140px]"
+                        onClick={() => handleSort("currentStock")}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Quantity</span>
+                          {sortField === "currentStock" && (
+                            <ArrowUpDown className="h-3 w-3 ml-1" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer w-[100px]"
+                        onClick={() => handleSort("cost")}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Cost</span>
+                          {sortField === "cost" && (
+                            <ArrowUpDown className="h-3 w-3 ml-1" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer w-[140px]"
+                        onClick={() => handleSort("supplier")}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Supplier</span>
+                          {sortField === "supplier" && (
+                            <ArrowUpDown className="h-3 w-3 ml-1" />
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-right w-[120px]">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredIngredients.map((ingredient) => {
+                      const stockStatus = getStockStatus(ingredient);
+                      return (
+                        <TableRow key={ingredient.id}>
+                          <TableCell className="font-medium">
+                            {ingredient.name}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {ingredient.category}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={stockStatus.className}
+                              variant="outline"
                             >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Link
-                              href={`/ingredients/${ingredient.id}/edit`}
-                              title="Edit"
-                            >
-                              <Button size="icon" variant="ghost">
-                                <Pencil className="h-4 w-4" />
+                              {stockStatus.status === "low"
+                                ? "Low Stock"
+                                : stockStatus.status === "normal"
+                                ? "Normal"
+                                : "Ideal"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {ingredient.currentStock} {ingredient.unit}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Min: {ingredient.minimumStock} | Ideal:{" "}
+                              {ingredient.idealStock}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            ${ingredient.cost.toFixed(2)}/{ingredient.unit}
+                          </TableCell>
+                          <TableCell>
+                            {ingredient.supplier?.name || "Not specified"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                asChild
+                                onClick={() =>
+                                  viewIngredientDetails(ingredient)
+                                }
+                              >
+                                <Eye className="h-4 w-4" />
                               </Button>
-                            </Link>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => confirmDelete(ingredient.id)}
-                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                              <Link
+                                href={`/ingredients/${ingredient.id}/edit`}
+                                title="Edit"
+                              >
+                                <Button size="icon" variant="ghost">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => confirmDelete(ingredient.id)}
+                                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
 
           {/* Table Footer */}
           {!isLoading && !error && filteredIngredients.length > 0 && (

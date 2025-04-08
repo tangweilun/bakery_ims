@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { HistoryIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Define types for recipe with ingredients
 type RecipeWithIngredients = Recipe & {
@@ -243,138 +244,148 @@ export default function YieldManagementPage() {
           </Button>
         </div>
 
-        {/* Recipe Selection and Quantity Input */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="border rounded-lg p-4">
-            <div className="mb-2">
-              <label className="block font-medium mb-1">Select Recipe</label>
-              {isLoadingRecipes ? (
-                <Loader2 className="h-8 w-8 animate-spin" />
-              ) : (
-                <select
-                  className="w-full border rounded p-2"
-                  value={selectedRecipeId || ""}
-                  onChange={handleRecipeChange}
-                  disabled={isLoadingRecipes}
-                >
-                  <option value="">Select a recipe</option>
-                  {recipes.map((recipe) => (
-                    <option key={recipe.id} value={recipe.id}>
-                      {recipe.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-
-          <div className="border rounded-lg p-4">
-            <div className="mb-2">
-              <label className="block font-medium mb-1">Quantity</label>
-              {isLoadingDetails && selectedRecipeId ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <input
-                  type="number"
-                  className="w-full border rounded p-2"
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  min="1"
-                  disabled={!selectedRecipeId || isLoadingDetails}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Ingredients Table */}
-        {selectedRecipeId && (
-          <div className="border rounded-lg p-4 mb-6">
-            <div className="mb-2">
-              <h2 className="text-lg font-medium">Recipe Ingredients</h2>
-              <p className="text-sm text-gray-500">
-                Adjust for any wasted ingredients
-              </p>
-            </div>
-
-            {isLoadingDetails ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
+        {/* Wrap content in a Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Production Entry</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Recipe Selection and Quantity Input */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="border rounded-lg p-4">
+                <div className="mb-2">
+                  <label className="block font-medium mb-1">
+                    Select Recipe
+                  </label>
+                  {isLoadingRecipes ? (
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  ) : (
+                    <select
+                      className="w-full border rounded p-2"
+                      value={selectedRecipeId || ""}
+                      onChange={handleRecipeChange}
+                      disabled={isLoadingRecipes}
+                    >
+                      <option value="">Select a recipe</option>
+                      {recipes.map((recipe) => (
+                        <option key={recipe.id} value={recipe.id}>
+                          {recipe.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
-            ) : ingredients.length > 0 ? (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Ingredient</th>
-                    <th className="text-left py-2">Required Quantity</th>
-                    <th className="text-left py-2">Wasted</th>
-                    <th className="text-left py-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ingredients.map((ingredient) => (
-                    <tr key={ingredient.id} className="border-b">
-                      <td className="py-3">{ingredient.name}</td>
-                      <td className="py-3">
-                        {ingredient.requiredQuantity} {ingredient.unit}
-                      </td>
-                      <td className="py-3">
-                        <input
-                          type="number"
-                          className="border rounded p-1 w-20"
-                          value={ingredient.wasted}
-                          onChange={(e) =>
-                            handleWasteChange(ingredient.id, e.target.value)
-                          }
-                          min="0"
-                          step="0.01"
-                        />
-                      </td>
-                      <td className="py-3">{ingredient.unit}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-center py-4 text-gray-500">
-                No ingredients found for this recipe
-              </p>
-            )}
-          </div>
-        )}
 
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <button
-            className={`bg-black text-white px-4 py-2 rounded-lg transition 
-              ${
-                isSubmitting ||
-                isLoadingDetails ||
-                isLoadingRecipes ||
-                !selectedRecipeId ||
-                ingredients.length === 0
-                  ? "opacity-70 cursor-not-allowed"
-                  : "hover:bg-gray-800"
-              }`}
-            onClick={handleUpdateStock}
-            disabled={
-              isSubmitting ||
-              isLoadingDetails ||
-              isLoadingRecipes ||
-              !selectedRecipeId ||
-              ingredients.length === 0
-            }
-          >
-            {isSubmitting
-              ? "Uploading..."
-              : isLoadingDetails || isLoadingRecipes
-              ? "Loading..."
-              : "Update Stock"}
-          </button>
-        </div>
+              <div className="border rounded-lg p-4">
+                <div className="mb-2">
+                  <label className="block font-medium mb-1">Quantity</label>
+                  {isLoadingDetails && selectedRecipeId ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <input
+                      type="number"
+                      className="w-full border rounded p-2"
+                      value={quantity}
+                      onChange={handleQuantityChange}
+                      min="1"
+                      disabled={!selectedRecipeId || isLoadingDetails}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Ingredients Table */}
+            {selectedRecipeId && (
+              <div className="border rounded-lg p-4 mb-6">
+                <div className="mb-2">
+                  <h2 className="text-lg font-medium">Recipe Ingredients</h2>
+                  <p className="text-sm text-gray-500">
+                    Adjust for any wasted ingredients
+                  </p>
+                </div>
+
+                {isLoadingDetails ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                ) : ingredients.length > 0 ? (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2">Ingredient</th>
+                        <th className="text-left py-2">Required Quantity</th>
+                        <th className="text-left py-2">Wasted</th>
+                        <th className="text-left py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ingredients.map((ingredient) => (
+                        <tr key={ingredient.id} className="border-b">
+                          <td className="py-3">{ingredient.name}</td>
+                          <td className="py-3">
+                            {ingredient.requiredQuantity} {ingredient.unit}
+                          </td>
+                          <td className="py-3">
+                            <input
+                              type="number"
+                              className="border rounded p-1 w-20"
+                              value={ingredient.wasted}
+                              onChange={(e) =>
+                                handleWasteChange(ingredient.id, e.target.value)
+                              }
+                              min="0"
+                              step="0.01"
+                            />
+                          </td>
+                          <td className="py-3">{ingredient.unit}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-center py-4 text-gray-500">
+                    No ingredients found for this recipe
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <div className="flex justify-end">
+              <button
+                className={`bg-black text-white px-4 py-2 rounded-lg transition 
+                  ${
+                    isSubmitting ||
+                    isLoadingDetails ||
+                    isLoadingRecipes ||
+                    !selectedRecipeId ||
+                    ingredients.length === 0
+                      ? "opacity-70 cursor-not-allowed"
+                      : "hover:bg-gray-800"
+                  }`}
+                onClick={handleUpdateStock}
+                disabled={
+                  isSubmitting ||
+                  isLoadingDetails ||
+                  isLoadingRecipes ||
+                  !selectedRecipeId ||
+                  ingredients.length === 0
+                }
+              >
+                {isSubmitting
+                  ? "Uploading..."
+                  : isLoadingDetails || isLoadingRecipes
+                  ? "Loading..."
+                  : "Update Stock"}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Shortage Alert Dialog */}

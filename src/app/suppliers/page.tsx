@@ -137,139 +137,142 @@ export default function ManageSuppliers() {
         </div>
       </div>
       <div className="container mx-auto py-8 px-4">
+        {/* Page Title & Add Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Suppliers</h1>
+          <Button asChild>
+            <Link href="/suppliers/create">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add New Supplier
+            </Link>
+          </Button>
+        </div>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle className="text-2xl font-bold">Suppliers</CardTitle>
-              <CardDescription>View and manage your suppliers.</CardDescription>
-            </div>
-            <Button asChild>
-              <Link href="/suppliers/create">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Supplier
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="py-4 space-y-4">
-            <div className="flex items-center space-x-2">
+            <div className="relative flex-grow pl-4">
               <Input
                 placeholder="Search suppliers..."
+                className="max-w-sm ml-auto block"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="max-w-sm"
               />
             </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-4">Loading suppliers...</div>
+            ) : suppliers.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No suppliers found.</p>
+                <Button asChild>
+                  <Link href="/suppliers/create">
+                    <PlusCircle className="mr-2 h-5 w-5" /> Add Your First
+                    Supplier
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Contact Person</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {suppliers
+                      .filter(
+                        (supplier) =>
+                          supplier.name
+                            .toLowerCase()
+                            .includes(search.toLowerCase()) ||
+                          (supplier.contactPerson &&
+                            supplier.contactPerson
+                              .toLowerCase()
+                              .includes(search.toLowerCase())) ||
+                          (supplier.email &&
+                            supplier.email
+                              .toLowerCase()
+                              .includes(search.toLowerCase()))
+                      )
+                      .map((supplier) => (
+                        <TableRow key={supplier.id}>
+                          <TableCell>{supplier.id}</TableCell>
+                          <TableCell className="font-medium">
+                            {supplier.name}
+                          </TableCell>
+                          <TableCell>{supplier.contactPerson || "—"}</TableCell>
+                          <TableCell>{supplier.email || "—"}</TableCell>
+                          <TableCell>{supplier.phone || "—"}</TableCell>
+                          <TableCell>
+                            {formatDate(supplier.updatedAt)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  Actions
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => viewSupplierDetails(supplier)}
+                                >
+                                  <Eye className="mr-2 h-4 w-4" /> View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/suppliers/${supplier.id}/edit`}>
+                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => confirmDelete(supplier.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash className="mr-2 h-4 w-4" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {!isLoading && suppliers.length > 0 && (
+              <CardFooter className="flex justify-between border-t px-6 py-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing{" "}
+                  {
+                    suppliers.filter(
+                      (supplier) =>
+                        supplier.name
+                          .toLowerCase()
+                          .includes(search.toLowerCase()) ||
+                        (supplier.contactPerson &&
+                          supplier.contactPerson
+                            .toLowerCase()
+                            .includes(search.toLowerCase())) ||
+                        (supplier.email &&
+                          supplier.email
+                            .toLowerCase()
+                            .includes(search.toLowerCase()))
+                    ).length
+                  }{" "}
+                  of {suppliers.length} suppliers
+                </p>
+              </CardFooter>
+            )}
           </CardContent>
         </Card>
-
-        {isLoading ? (
-          <div className="text-center py-4">Loading suppliers...</div>
-        ) : suppliers.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">No suppliers found.</p>
-            <Button asChild>
-              <Link href="/suppliers/create">
-                <PlusCircle className="mr-2 h-5 w-5" /> Add Your First Supplier
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {suppliers
-                  .filter(
-                    (supplier) =>
-                      supplier.name
-                        .toLowerCase()
-                        .includes(search.toLowerCase()) ||
-                      (supplier.contactPerson &&
-                        supplier.contactPerson
-                          .toLowerCase()
-                          .includes(search.toLowerCase())) ||
-                      (supplier.email &&
-                        supplier.email
-                          .toLowerCase()
-                          .includes(search.toLowerCase()))
-                  )
-                  .map((supplier) => (
-                    <TableRow key={supplier.id}>
-                      <TableCell>{supplier.id}</TableCell>
-                      <TableCell className="font-medium">
-                        {supplier.name}
-                      </TableCell>
-                      <TableCell>{supplier.contactPerson || "—"}</TableCell>
-                      <TableCell>{supplier.email || "—"}</TableCell>
-                      <TableCell>{supplier.phone || "—"}</TableCell>
-                      <TableCell>{formatDate(supplier.updatedAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              Actions
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => viewSupplierDetails(supplier)}
-                            >
-                              <Eye className="mr-2 h-4 w-4" /> View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/suppliers/${supplier.id}/edit`}>
-                                <Pencil className="mr-2 h-4 w-4" /> Edit
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => confirmDelete(supplier.id)}
-                              className="text-red-600"
-                            >
-                              <Trash className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        {!isLoading && suppliers.length > 0 && (
-          <CardFooter className="flex justify-between border-t px-6 py-4">
-            <p className="text-sm text-muted-foreground">
-              Showing{" "}
-              {
-                suppliers.filter(
-                  (supplier) =>
-                    supplier.name
-                      .toLowerCase()
-                      .includes(search.toLowerCase()) ||
-                    (supplier.contactPerson &&
-                      supplier.contactPerson
-                        .toLowerCase()
-                        .includes(search.toLowerCase())) ||
-                    (supplier.email &&
-                      supplier.email
-                        .toLowerCase()
-                        .includes(search.toLowerCase()))
-                ).length
-              }{" "}
-              of {suppliers.length} suppliers
-            </p>
-          </CardFooter>
-        )}
       </div>
 
       {/* View Supplier Details Dialog */}
