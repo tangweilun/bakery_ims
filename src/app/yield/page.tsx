@@ -233,7 +233,7 @@ export default function YieldManagementPage() {
       {/* Main Content */}
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Yield Management</h1>
+          <h1 className="text-3xl font-bold">Yield Management</h1>
           <Button
             variant="outline"
             onClick={navigateToHistory}
