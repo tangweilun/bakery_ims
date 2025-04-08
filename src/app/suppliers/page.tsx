@@ -48,8 +48,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Supplier } from "@/types/supplier";
-
-// Update interface to match Prisma schema
+import { toast } from "react-toastify";
 
 export default function ManageSuppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -72,6 +71,7 @@ export default function ManageSuppliers() {
         setSuppliers(data);
       } catch (error) {
         console.error("Error loading suppliers:", error);
+        toast.error("Failed to load suppliers.");
       } finally {
         setIsLoading(false);
       }
@@ -96,10 +96,12 @@ export default function ManageSuppliers() {
       setSuppliers((prev) =>
         prev.filter((supplier) => supplier.id !== supplierToDelete)
       );
+      toast.success("Supplier deleted successfully!");
       setDeleteDialogOpen(false);
       setSupplierToDelete(null);
     } catch (error) {
       console.error("Error deleting supplier:", error);
+      toast.error("Failed to delete supplier. Please try again.");
     }
   };
 

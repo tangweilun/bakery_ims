@@ -18,6 +18,7 @@ import Link from "next/link";
 import { ForecastChart } from "@/components/forecasts/ForecastChart";
 import { ForecastTable } from "@/components/forecasts/ForecastTable";
 import { IngredientRequirementsChart } from "@/components/forecasts/IngredientRequirementsChart";
+import { toast } from "react-toastify";
 
 // Define proper types
 interface Recipe {
@@ -89,6 +90,7 @@ export default function ForecastsPage() {
           err instanceof Error ? err.message : "Failed to fetch recipes"
         );
         console.log(err);
+        toast.error("Failed to load recipes.");
       } finally {
         setIsLoadingRecipes(false);
       }
@@ -102,7 +104,10 @@ export default function ForecastsPage() {
     const calculateIngredientRequirements = async () => {
       if (!forecastData) return;
 
-      console.log("[DEBUG] Calculating ingredient requirements for recipe:", forecastData.recipeId);
+      console.log(
+        "[DEBUG] Calculating ingredient requirements for recipe:",
+        forecastData.recipeId
+      );
       setIsLoadingIngredients(true);
       try {
         console.log("[DEBUG] Forecast data:", forecastData);
@@ -116,8 +121,11 @@ export default function ForecastsPage() {
           (sum, qty) => sum + qty,
           0
         );
-        
-        console.log("[DEBUG] Total forecasted quantity:", totalForecastedQuantity);
+
+        console.log(
+          "[DEBUG] Total forecasted quantity:",
+          totalForecastedQuantity
+        );
 
         // Fetch ingredient requirements
         const requestBody = {
@@ -125,18 +133,27 @@ export default function ForecastsPage() {
           forecastQuantity: Number(totalForecastedQuantity), // Ensure it's a number
         };
         console.log("[DEBUG] Sending request with body:", requestBody);
-        
+
         // Add additional validation before sending the request
         if (!requestBody.recipeId || isNaN(requestBody.recipeId)) {
-          console.log("[DEBUG] Invalid recipeId before sending:", requestBody.recipeId);
+          console.log(
+            "[DEBUG] Invalid recipeId before sending:",
+            requestBody.recipeId
+          );
           throw new Error("Invalid recipe ID");
         }
-        
-        if (!requestBody.forecastQuantity || isNaN(requestBody.forecastQuantity)) {
-          console.log("[DEBUG] Invalid forecastQuantity before sending:", requestBody.forecastQuantity);
+
+        if (
+          !requestBody.forecastQuantity ||
+          isNaN(requestBody.forecastQuantity)
+        ) {
+          console.log(
+            "[DEBUG] Invalid forecastQuantity before sending:",
+            requestBody.forecastQuantity
+          );
           throw new Error("Invalid forecast quantity");
         }
-        
+
         const response = await fetch("/api/ingredient-requirements", {
           method: "POST",
           headers: {
@@ -154,11 +171,16 @@ export default function ForecastsPage() {
         }
 
         const data = await response.json();
-        console.log("[DEBUG] Ingredient requirements received:", data.requirements.length, "items");
+        console.log(
+          "[DEBUG] Ingredient requirements received:",
+          data.requirements.length,
+          "items"
+        );
         setIngredientRequirements(data.requirements);
       } catch (err) {
         console.log("[DEBUG] Error calculating ingredient requirements:", err);
         // Don't set error state here to avoid overriding forecast errors
+        toast.error("Failed to calculate ingredient requirements.");
       } finally {
         setIsLoadingIngredients(false);
       }
@@ -183,7 +205,7 @@ export default function ForecastsPage() {
         ...forecastParams,
       };
       console.log("[DEBUG] Forecast request body:", requestBody);
-      
+
       const response = await fetch("/api/forecasts", {
         method: "POST",
         headers: {
@@ -221,14 +243,21 @@ export default function ForecastsPage() {
         }
       }
 
-      console.log("[DEBUG] Setting forecast data with dates:", data.forecast.dates.length);
+      console.log(
+        "[DEBUG] Setting forecast data with dates:",
+        data.forecast.dates.length
+      );
       setForecastData(data.forecast as ForecastData);
+      toast.success("Forecast generated successfully!");
     } catch (err) {
       console.log("[DEBUG] Error in generateForecast:", err);
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"
       );
       console.error(err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to generate forecast"
+      );
     } finally {
       setIsLoading(false);
     }
