@@ -218,7 +218,7 @@ export default function EditIngredientPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-6 container mx-auto max-w-4xl">
+      <div className="container mx-auto py-8 px-4">
         {/* Loading State */}
         {loading ? (
           <Card>
@@ -257,9 +257,7 @@ export default function EditIngredientPage() {
               <Button variant="outline" asChild>
                 <Link
                   href={
-                    error && !ingredient.name
-                      ? "/ingredients"
-                      : `/ingredients/${ingredientId}/edit`
+                    "/ingredients" // Always go back to ingredients list
                   }
                 >
                   {error && !ingredient.name ? "Back to Ingredients" : "Cancel"}

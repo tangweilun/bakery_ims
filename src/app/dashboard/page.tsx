@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 
 export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="border-b">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
@@ -27,8 +27,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-between space-y-2 mb-6">
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -43,7 +43,7 @@ export default function DashboardPage() {
               <ExpiringIngredients />
             </CardContent>
           </Card>
-          
+
           <Card className="col-span-1">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>

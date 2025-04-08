@@ -87,9 +87,9 @@ export default function AddSupplier() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Header - Responsive navigation */}
-      <div className="border-b">
+      <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-2 sm:px-4">
           <MainNav className="mx-2 sm:mx-6" />
           <div className="ml-auto flex items-center space-x-2 sm:space-x-4">
@@ -99,7 +99,7 @@ export default function AddSupplier() {
       </div>
 
       {/* Main content - Responsive container */}
-      <div className="flex-1 p-4 sm:p-6 md:p-8 max-w-full sm:max-w-3xl mx-auto w-full">
+      <div className="container mx-auto py-8 px-4">
         {/* Responsive header with back button */}
         <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6 gap-2">
           <Link

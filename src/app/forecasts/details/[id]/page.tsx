@@ -66,24 +66,31 @@ export default function ForecastDetailPage() {
         if (!response.ok) throw new Error("Failed to fetch forecast details");
         const data = await response.json();
         console.log("[DEBUG] Forecast data received:", data);
-        
+
         // Extract the forecast object from the response
         if (data.forecast) {
-          console.log("[DEBUG] Setting forecast with recipeId:", data.forecast.recipeId);
-          
+          console.log(
+            "[DEBUG] Setting forecast with recipeId:",
+            data.forecast.recipeId
+          );
+
           // Process the forecast data to ensure proper structure
           const processedForecast = {
             ...data.forecast,
             // Ensure arrays are properly formatted
-            dates: Array.isArray(data.forecast.dates) ? data.forecast.dates : [],
-            actualQuantities: Array.isArray(data.forecast.actualQuantities) 
-              ? data.forecast.actualQuantities 
+            dates: Array.isArray(data.forecast.dates)
+              ? data.forecast.dates
               : [],
-            predictedQuantities: Array.isArray(data.forecast.predictedQuantities) 
-              ? data.forecast.predictedQuantities 
-              : []
+            actualQuantities: Array.isArray(data.forecast.actualQuantities)
+              ? data.forecast.actualQuantities
+              : [],
+            predictedQuantities: Array.isArray(
+              data.forecast.predictedQuantities
+            )
+              ? data.forecast.predictedQuantities
+              : [],
           };
-          
+
           setForecast(processedForecast);
         } else {
           console.log("[DEBUG] No forecast data in response:", data);
@@ -107,19 +114,25 @@ export default function ForecastDetailPage() {
   useEffect(() => {
     const fetchIngredientRequirements = async () => {
       if (!forecast) return;
-      console.log("[DEBUG] Fetching ingredient requirements for recipe:", forecast.recipeId);
+      console.log(
+        "[DEBUG] Fetching ingredient requirements for recipe:",
+        forecast.recipeId
+      );
       setIsLoadingIngredients(true);
       try {
         // Calculate total forecasted quantity from the predictedQuantities array
         const totalForecastQuantity = forecast.predictedQuantities
-          .filter(q => q !== null)
-          .reduce((sum, qty) => sum + (typeof qty === 'number' ? qty : 0), 0);
-        
+          .filter((q) => q !== null)
+          .reduce((sum, qty) => sum + (typeof qty === "number" ? qty : 0), 0);
+
         const requestBody = {
           recipeId: Number(forecast.recipeId),
-          forecastQuantity: totalForecastQuantity > 0 ? totalForecastQuantity : forecast.forecastQuantity,
+          forecastQuantity:
+            totalForecastQuantity > 0
+              ? totalForecastQuantity
+              : forecast.forecastQuantity,
         };
-        
+
         console.log("[DEBUG] Sending request with body:", requestBody);
         const response = await fetch("/api/ingredient-requirements", {
           method: "POST",
@@ -150,8 +163,8 @@ export default function ForecastDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <div className="border-b">
+      <div className="flex min-h-screen flex-col bg-gray-50">
+        <div className="border-b bg-white shadow-sm">
           <div className="flex h-16 items-center px-4">
             <MainNav className="mx-6" />
             <div className="ml-auto flex items-center space-x-4">
@@ -168,8 +181,8 @@ export default function ForecastDetailPage() {
 
   if (error || !forecast) {
     return (
-      <div className="flex min-h-screen flex-col">
-        <div className="border-b">
+      <div className="flex min-h-screen flex-col bg-gray-50">
+        <div className="border-b bg-white shadow-sm">
           <div className="flex h-16 items-center px-4">
             <MainNav className="mx-6" />
             <div className="ml-auto flex items-center space-x-4">
@@ -201,8 +214,8 @@ export default function ForecastDetailPage() {
   const factorsObj = forecast.factors ? JSON.parse(forecast.factors) : {};
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="border-b">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
@@ -210,8 +223,8 @@ export default function ForecastDetailPage() {
           </div>
         </div>
       </div>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-between space-y-2 mb-6">
           <h2 className="text-3xl font-bold tracking-tight">
             Forecast Details
           </h2>
@@ -252,7 +265,7 @@ export default function ForecastDetailPage() {
                     Forecast Quantity
                   </dt>
                   <dd className="mt-1">
-                    {forecast.forecastQuantity !== undefined 
+                    {forecast.forecastQuantity !== undefined
                       ? forecast.forecastQuantity.toFixed(0)
                       : "N/A"}
                   </dd>
@@ -281,9 +294,12 @@ export default function ForecastDetailPage() {
                     Created At
                   </dt>
                   <dd className="mt-1">
-                    {forecast.createdAt ? 
-                      format(parseISO(forecast.createdAt), "MMM d, yyyy h:mm a") : 
-                      "Not available"}
+                    {forecast.createdAt
+                      ? format(
+                          parseISO(forecast.createdAt),
+                          "MMM d, yyyy h:mm a"
+                        )
+                      : "Not available"}
                   </dd>
                 </div>
               </dl>
@@ -303,7 +319,9 @@ export default function ForecastDetailPage() {
                 </TabsList>
 
                 <TabsContent value="chart">
-                  {forecast.dates && forecast.actualQuantities && forecast.predictedQuantities ? (
+                  {forecast.dates &&
+                  forecast.actualQuantities &&
+                  forecast.predictedQuantities ? (
                     <ForecastChart
                       data={{
                         dates: forecast.dates,
@@ -312,9 +330,14 @@ export default function ForecastDetailPage() {
                         recipeName: forecast.recipeName,
                         confidenceLevel: forecast.confidenceLevel || 0,
                         // Calculate the prediction start index - it's where actual data ends
-                        predictionStartIndex: forecast.actualQuantities.findIndex(q => q === null) !== -1 
-                          ? forecast.actualQuantities.findIndex(q => q === null)
-                          : forecast.actualQuantities.length
+                        predictionStartIndex:
+                          forecast.actualQuantities.findIndex(
+                            (q) => q === null
+                          ) !== -1
+                            ? forecast.actualQuantities.findIndex(
+                                (q) => q === null
+                              )
+                            : forecast.actualQuantities.length,
                       }}
                     />
                   ) : (

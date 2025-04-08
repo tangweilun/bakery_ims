@@ -362,7 +362,8 @@ export default function SalesPage() {
           </div>
         </div>
       </div>
-      <div className="container mx-auto p-4">
+      {/* Main Content */}
+      <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Sales Management</h1>
           <Dialog open={open} onOpenChange={setOpen}>

@@ -22,6 +22,7 @@ import * as z from "zod";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { Card } from "@/components/ui/card";
 
 // Form validation schema
 const formSchema = z.object({
@@ -151,8 +152,9 @@ export default function EditSupplier() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="border-b">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      {/* Header */}
+      <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
@@ -160,8 +162,9 @@ export default function EditSupplier() {
           </div>
         </div>
       </div>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between">
+      {/* Main Content */}
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold">Edit Supplier</h2>
           <Button variant="outline" asChild>
             <Link href="/suppliers">
@@ -184,7 +187,7 @@ export default function EditSupplier() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-md border p-6">
+          <Card className="p-6">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
@@ -319,7 +322,7 @@ export default function EditSupplier() {
                 </div>
               </form>
             </Form>
-          </div>
+          </Card>
         )}
       </div>
     </div>

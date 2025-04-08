@@ -183,8 +183,9 @@ export default function AddIngredientForm() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="border-b">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      {/* Header */}
+      <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
@@ -192,7 +193,8 @@ export default function AddIngredientForm() {
           </div>
         </div>
       </div>
-      <div className="container mx-auto py-6">
+      {/* Main Content */}
+      <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Add New Ingredient</h1>
           <Button variant="outline" onClick={() => router.back()}>

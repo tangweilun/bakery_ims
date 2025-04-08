@@ -49,6 +49,14 @@ import {
 import Link from "next/link";
 import { Supplier } from "@/types/supplier";
 import { toast } from "react-toastify";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function ManageSuppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -119,8 +127,8 @@ export default function ManageSuppliers() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="border-b">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
@@ -128,23 +136,31 @@ export default function ManageSuppliers() {
           </div>
         </div>
       </div>
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">Suppliers</h2>
-          <Button asChild>
-            <Link href="/suppliers/create">
-              <PlusCircle className="mr-2 h-5 w-5" /> Add Supplier
-            </Link>
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder="Search suppliers by name, contact person, or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
+      <div className="container mx-auto py-8 px-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-2xl font-bold">Suppliers</CardTitle>
+              <CardDescription>View and manage your suppliers.</CardDescription>
+            </div>
+            <Button asChild>
+              <Link href="/suppliers/create">
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Supplier
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="py-4 space-y-4">
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Search suppliers..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {isLoading ? (
           <div className="text-center py-4">Loading suppliers...</div>
         ) : suppliers.length === 0 ? (
@@ -228,6 +244,31 @@ export default function ManageSuppliers() {
               </TableBody>
             </Table>
           </div>
+        )}
+
+        {!isLoading && suppliers.length > 0 && (
+          <CardFooter className="flex justify-between border-t px-6 py-4">
+            <p className="text-sm text-muted-foreground">
+              Showing{" "}
+              {
+                suppliers.filter(
+                  (supplier) =>
+                    supplier.name
+                      .toLowerCase()
+                      .includes(search.toLowerCase()) ||
+                    (supplier.contactPerson &&
+                      supplier.contactPerson
+                        .toLowerCase()
+                        .includes(search.toLowerCase())) ||
+                    (supplier.email &&
+                      supplier.email
+                        .toLowerCase()
+                        .includes(search.toLowerCase()))
+                ).length
+              }{" "}
+              of {suppliers.length} suppliers
+            </p>
+          </CardFooter>
         )}
       </div>
 

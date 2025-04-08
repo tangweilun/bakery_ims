@@ -282,8 +282,8 @@ export default function BatchesPage() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="border-b">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />
           <div className="ml-auto flex items-center space-x-4">
@@ -291,7 +291,7 @@ export default function BatchesPage() {
           </div>
         </div>
       </div>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Batch Management</h1>
           <Button onClick={() => setIsAddDialogOpen(true)}>
