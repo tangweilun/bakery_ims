@@ -183,8 +183,8 @@ export default function AddIngredientForm() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      {/* Header */}
+    <div className="flex min-h-screen flex-col bg-gray-50 w-full">
+      {/* Header/Navigation */}
       <div className="border-b bg-white shadow-sm">
         <div className="flex h-16 items-center px-4">
           <MainNav className="mx-6" />

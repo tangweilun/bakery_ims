@@ -25,7 +25,10 @@ export const forecastService = {
     salesData: AggregatedSalesData,
     daysToForecast: number = 7
   ): Promise<ForecastResult> {
-    console.log("[DEBUG] Starting forecast generation for recipe:", salesData.recipeId);
+    console.log(
+      "[DEBUG] Starting forecast generation for recipe:",
+      salesData.recipeId
+    );
     const windowSize = 7;
     const quantities = this.simplePreprocess(salesData.quantities);
     console.log("[DEBUG] Preprocessed quantities length:", quantities.length);
@@ -40,7 +43,7 @@ export const forecastService = {
       // Clear TensorFlow backend before creating a new model
       console.log("[DEBUG] Clearing TensorFlow memory before model creation");
       tf.engine().startScope(); // Start a new scope to track tensors
-      
+
       const { model, min, max, accuracy } = await this.trainModel(
         quantities,
         windowSize
@@ -69,7 +72,7 @@ export const forecastService = {
       // Dispose of the model and end the scope
       model.dispose();
       tf.engine().endScope();
-      
+
       console.log("[DEBUG] Forecast generation completed successfully");
       return this.formatResult(salesData, futureDates, predictions, accuracy);
     } catch (error) {
@@ -88,7 +91,7 @@ export const forecastService = {
     // Use unique names for layers to avoid conflicts
     const uniqueId = Date.now().toString();
     console.log("[DEBUG] Creating model with unique ID:", uniqueId);
-    
+
     const model = tf.sequential({
       layers: [
         tf.layers.dense({
@@ -97,8 +100,8 @@ export const forecastService = {
           activation: "relu",
           name: `dense_input_${uniqueId}`,
         }),
-        tf.layers.dense({ 
-          units: 1, 
+        tf.layers.dense({
+          units: 1,
           activation: "linear",
           name: `dense_output_${uniqueId}`,
         }),
@@ -152,38 +155,38 @@ export const forecastService = {
     // Take the last few points (up to 10) to evaluate model performance
     const sampleSize = Math.min(10, originalData.length - windowSize);
     let totalError = 0;
-    
+
     // Calculate MAE on a small sample
     for (let i = 0; i < sampleSize; i++) {
       const idx = originalData.length - sampleSize - windowSize + i;
       if (idx < 0) continue;
-      
+
       // Get the window for this prediction
       const testWindow = normalizedData.slice(idx, idx + windowSize);
       const inputTensor = tf.tensor2d([testWindow]);
-      
+
       // Make prediction
       const prediction = model.predict(inputTensor) as tf.Tensor;
       const predValue = prediction.dataSync()[0] * (max - min) + min;
-      
+
       // Get actual value
       const actual = originalData[idx + windowSize];
-      
+
       // Calculate absolute error
       totalError += Math.abs(predValue - actual);
-      
+
       // Clean up tensor
       tf.dispose([inputTensor, prediction]);
     }
-    
+
     // Calculate MAE
     const mae = totalError / sampleSize;
-    
+
     // Convert MAE to a confidence score between 0 and 1
     // Lower MAE means higher confidence
     // Use a simple formula: confidence = 1 / (1 + mae)
     const confidence = 1 / (1 + mae);
-    
+
     return Math.max(0, Math.min(1, confidence)); // Ensure between 0 and 1
   },
 
@@ -230,8 +233,8 @@ export const forecastService = {
   },
 
   generateDates(lastDates: string[], days: number): string[] {
-   // const lastDate = new Date(lastDates[lastDates.length - 1]);
-   const lastDate = new Date(); // Use today's date instead of last sales date
+    // const lastDate = new Date(lastDates[lastDates.length - 1]);
+    const lastDate = new Date(); // Use today's date instead of last sales date
     return Array.from({ length: days }, (_, i) => {
       const date = new Date(lastDate);
       date.setDate(date.getDate() + i + 1);
@@ -248,10 +251,10 @@ export const forecastService = {
         ? salesData.quantities.reduce((a, b) => a + b, 0) /
           salesData.quantities.length
         : 10; // Default fallback
-    
+
     // Generate future dates starting from today
     const futureDates = this.generateDates(salesData.dates, days);
-    
+
     return {
       recipeId: salesData.recipeId,
       recipeName: salesData.recipeName,
@@ -271,21 +274,37 @@ export const forecastService = {
     predictions: number[],
     accuracy: number
   ): Promise<void> {
-    console.log("[DEBUG] Saving forecast result for recipe:", salesData.recipeId);
-    console.log("[DEBUG] Future dates range:", futureDates[0], "to", futureDates[futureDates.length - 1]);
-    
+    console.log(
+      "[DEBUG] Saving forecast result for recipe:",
+      salesData.recipeId
+    );
+    console.log(
+      "[DEBUG] Future dates range:",
+      futureDates[0],
+      "to",
+      futureDates[futureDates.length - 1]
+    );
+
     const forecastQuantity = predictions.reduce((a, b) => a + b, 0);
     console.log("[DEBUG] Total forecast quantity:", forecastQuantity);
-    
+
     // Prepare arrays for the database
-    const actualQuantitiesArray = salesData.quantities.map(q => Math.round(q)); // Convert to integers
-    const predictedQuantitiesArray = predictions.map(p => Math.round(p)); // Convert to integers
+    const actualQuantitiesArray = salesData.quantities.map((q) =>
+      Math.round(q)
+    ); // Convert to integers
+    const predictedQuantitiesArray = predictions.map((p) => Math.round(p)); // Convert to integers
     const allDates = [...salesData.dates, ...futureDates];
-    
-    console.log("[DEBUG] Actual quantities length:", actualQuantitiesArray.length);
-    console.log("[DEBUG] Predicted quantities length:", predictedQuantitiesArray.length);
+
+    console.log(
+      "[DEBUG] Actual quantities length:",
+      actualQuantitiesArray.length
+    );
+    console.log(
+      "[DEBUG] Predicted quantities length:",
+      predictedQuantitiesArray.length
+    );
     console.log("[DEBUG] All dates length:", allDates.length);
-    
+
     // Prepare time series data for backward compatibility
     const timeSeriesData = {
       dates: allDates,
@@ -298,7 +317,7 @@ export const forecastService = {
         ...predictions,
       ],
     };
-    
+
     try {
       await prisma.demandForecast.create({
         data: {
@@ -316,7 +335,9 @@ export const forecastService = {
           dates: allDates,
         },
       });
-      console.log("[DEBUG] Forecast successfully saved to database with arrays");
+      console.log(
+        "[DEBUG] Forecast successfully saved to database with arrays"
+      );
     } catch (error) {
       console.error("[DEBUG] Error saving forecast to database:", error);
       throw error;
@@ -330,7 +351,7 @@ export const forecastService = {
     accuracy: number
   ): ForecastResult {
     console.log("[DEBUG] Formatting forecast result");
-    
+
     // Create arrays for the response
     const allDates = [...salesData.dates, ...futureDates];
     const actualQuantities = [
@@ -341,11 +362,17 @@ export const forecastService = {
       ...Array(salesData.quantities.length).fill(null),
       ...predictions,
     ];
-    
+
     console.log("[DEBUG] Formatted result - dates length:", allDates.length);
-    console.log("[DEBUG] Formatted result - actual quantities length:", actualQuantities.length);
-    console.log("[DEBUG] Formatted result - predicted quantities length:", predictedQuantities.length);
-    
+    console.log(
+      "[DEBUG] Formatted result - actual quantities length:",
+      actualQuantities.length
+    );
+    console.log(
+      "[DEBUG] Formatted result - predicted quantities length:",
+      predictedQuantities.length
+    );
+
     return {
       recipeId: salesData.recipeId,
       recipeName: salesData.recipeName,
