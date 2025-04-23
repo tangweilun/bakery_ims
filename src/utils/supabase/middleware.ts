@@ -33,25 +33,29 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Allow access to auth callback routes for Google OAuth
-  const isAuthRoute =
-    request.nextUrl.pathname.startsWith("/api/auth") ||
-    request.nextUrl.pathname.startsWith("/auth/callback");
+  // IMPORTANT: This is where the issue might be.
+  // Allow access to auth callback routes unconditionally
+  const authCallbackPath = request.nextUrl.pathname === "/auth/callback";
 
-  // Add auth-code-error to public routes
+  // If it's the callback route, we should always let it proceed without redirects
+  if (authCallbackPath) {
+    return supabaseResponse;
+  }
+
+  // For other routes, proceed with your protection logic
+  const isAuthRoute = request.nextUrl.pathname.startsWith("/api/auth");
+
   const isPublicRoute =
     request.nextUrl.pathname.startsWith("/sign-in") ||
     request.nextUrl.pathname.startsWith("/sign-up") ||
     request.nextUrl.pathname.startsWith("/forgot-password") ||
     request.nextUrl.pathname.startsWith("/reset-password") ||
     request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/auth/auth-code-error") || 
+    request.nextUrl.pathname.startsWith("/auth/auth-code-error") ||
     isAuthRoute;
 
   // If no user and trying to access protected route, redirect to sign-in
@@ -67,19 +71,6 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
 
   return supabaseResponse;
 }
