@@ -51,7 +51,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/forgot-password") ||
     request.nextUrl.pathname.startsWith("/reset-password") ||
     request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/auth/auth-code-error") || // Add this line
+    request.nextUrl.pathname.startsWith("/auth/auth-code-error") || 
     isAuthRoute;
 
   // If no user and trying to access protected route, redirect to sign-in

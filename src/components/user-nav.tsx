@@ -273,7 +273,7 @@ export function UserNav() {
           </div>
         ) : (
           <SheetClose asChild>
-            <Button className="w-full" onClick={() => router.push("/login")}>
+            <Button className="w-full" onClick={() => router.push("/sign-in")}>
               <UserIcon className="mr-2 h-4 w-4" />
               Sign in
             </Button>
