@@ -37,40 +37,40 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // IMPORTANT: This is where the issue might be.
-  // Allow access to auth callback routes unconditionally
-  const authCallbackPath = request.nextUrl.pathname === "/auth/callback";
+  // // IMPORTANT: This is where the issue might be.
+  // // Allow access to auth callback routes unconditionally
+  // const authCallbackPath = request.nextUrl.pathname === "/auth/callback";
 
-  // If it's the callback route, we should always let it proceed without redirects
-  if (authCallbackPath) {
-    return supabaseResponse;
-  }
+  // // If it's the callback route, we should always let it proceed without redirects
+  // if (authCallbackPath) {
+  //   return supabaseResponse;
+  // }
 
-  // For other routes, proceed with your protection logic
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/api/auth");
+  // // For other routes, proceed with your protection logic
+  // const isAuthRoute = request.nextUrl.pathname.startsWith("/api/auth");
 
-  const isPublicRoute =
-    request.nextUrl.pathname.startsWith("/sign-in") ||
-    request.nextUrl.pathname.startsWith("/sign-up") ||
-    request.nextUrl.pathname.startsWith("/forgot-password") ||
-    request.nextUrl.pathname.startsWith("/reset-password") ||
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/auth/auth-code-error") ||
-    isAuthRoute;
+  // const isPublicRoute =
+  //   request.nextUrl.pathname.startsWith("/sign-in") ||
+  //   request.nextUrl.pathname.startsWith("/sign-up") ||
+  //   request.nextUrl.pathname.startsWith("/forgot-password") ||
+  //   request.nextUrl.pathname.startsWith("/reset-password") ||
+  //   request.nextUrl.pathname === "/" ||
+  //   request.nextUrl.pathname.startsWith("/auth/auth-code-error") ||
+  //   isAuthRoute;
 
-  // If no user and trying to access protected route, redirect to sign-in
-  if (!user && !isPublicRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    return NextResponse.redirect(url);
-  }
+  // // If no user and trying to access protected route, redirect to sign-in
+  // if (!user && !isPublicRoute) {
+  //   const url = request.nextUrl.clone();
+  //   url.pathname = "/sign-in";
+  //   return NextResponse.redirect(url);
+  // }
 
-  // If user is signed in and trying to access sign-in page, redirect to dashboard
-  if (user && request.nextUrl.pathname.startsWith("/sign-in")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  // // If user is signed in and trying to access sign-in page, redirect to dashboard
+  // if (user && request.nextUrl.pathname.startsWith("/sign-in")) {
+  //   const url = request.nextUrl.clone();
+  //   url.pathname = "/dashboard";
+  //   return NextResponse.redirect(url);
+  // }
 
   return supabaseResponse;
 }
