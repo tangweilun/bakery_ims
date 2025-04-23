@@ -33,6 +33,10 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
+  // Still call getUser but don't use the result for now
+  // This maintains the session without applying the protection rules
+  await supabase.auth.getUser();
+
   // const {
   //   data: { user },
   // } = await supabase.auth.getUser();
