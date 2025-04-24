@@ -113,13 +113,13 @@ export async function POST(req: Request) {
 
     console.log("ingredientIds:", JSON.stringify(ingredientIds, null, 2));
 
-    // Fetch all ingredients with their available batches, ordered by receivedDate for FIFO
+    // Fetch all ingredients with their available batches, ordered by expiry date ascending (NULLs last), then by received date ascending
     const ingredientsRecords = await prisma.ingredient.findMany({
       where: { id: { in: ingredientIds.map((id) => Number(id)) } }, // Convert to numbers for Int IDs
       include: {
         batches: {
           where: { remainingQuantity: { gt: 0 } },
-          orderBy: { receivedDate: "asc" }, // FIFO principle
+          orderBy: [{ expiryDate: "asc" }, { receivedDate: "asc" }],
         },
       },
     });
@@ -223,13 +223,13 @@ export async function POST(req: Request) {
           continue;
         }
 
-        // Get all available batches for this ingredient (already sorted by receivedDate ASC)
+        // Get all available batches for this ingredient (now sorted by expiryDate ASC, then receivedDate ASC)
         const availableBatches = ingredient.batches.filter(
           (batch: Batch) => batch.remainingQuantity > 0
         );
         console.log(`Available batches count: ${availableBatches.length}`);
 
-        // Loop through batches from oldest to newest until we've deducted all needed quantity
+        // Loop through batches (earliest expiry first) until we've deducted all needed quantity
         for (const batch of availableBatches) {
           if (remainingToDeduct <= 0) break;
 
@@ -328,12 +328,12 @@ export async function POST(req: Request) {
         );
         if (!ingredient) continue;
 
-        // Get all available batches for this ingredient (already sorted by receivedDate ASC)
+        // Get all available batches for this ingredient (now sorted by expiryDate ASC, then receivedDate ASC)
         const availableBatches = ingredient.batches.filter(
           (batch: Batch) => batch.remainingQuantity > 0
         );
 
-        // Loop through batches from oldest to newest until we've deducted all needed quantity
+        // Loop through batches (earliest expiry first) until we've deducted all needed quantity
         for (const batch of availableBatches) {
           if (remainingToDeduct <= 0) break;
 
