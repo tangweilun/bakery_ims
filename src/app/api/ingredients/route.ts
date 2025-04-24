@@ -157,18 +157,50 @@ export async function POST(request: NextRequest) {
 // GET all ingredients
 export async function GET() {
   try {
-    // Query ingredients
+    // 1. Aggregate remaining quantities from Batches for active ingredients
+    const batchAggregations = await prisma.batch.groupBy({
+      by: ["ingredientId"],
+      _sum: {
+        remainingQuantity: true,
+      },
+      where: {
+        // Only consider batches linked to ingredients that are active
+        ingredient: {
+          isActive: true,
+        },
+        // Optional: Only sum batches that themselves have remaining quantity > 0
+        // remainingQuantity: {
+        //   gt: 0
+        // }
+      },
+    });
+
+    // Create a map for easy lookup: ingredientId -> totalRemainingQuantity
+    const stockMap = new Map<number, number>();
+    batchAggregations.forEach((agg) => {
+      stockMap.set(agg.ingredientId, agg._sum.remainingQuantity ?? 0);
+    });
+
+    // 2. Fetch all active ingredients with their basic details and supplier
     const ingredients = await prisma.ingredient.findMany({
       where: { isActive: true }, // Only fetch active ingredients
       include: {
-        supplier: true,
+        supplier: true, // Include supplier details if needed
       },
       orderBy: {
         name: "asc",
       },
     });
 
-    return NextResponse.json(ingredients);
+    // 3. Map ingredients and replace/add the calculated currentStock
+    const ingredientsWithCalculatedStock = ingredients.map((ingredient) => ({
+      ...ingredient,
+      // Replace the stored currentStock with the calculated sum from batches
+      currentStock: stockMap.get(ingredient.id) ?? 0,
+    }));
+
+    // 4. Return the modified list
+    return NextResponse.json(ingredientsWithCalculatedStock);
   } catch (error) {
     console.error("Error fetching ingredients:", error);
     return NextResponse.json(
