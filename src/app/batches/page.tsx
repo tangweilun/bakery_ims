@@ -90,12 +90,16 @@ export default function BatchesPage() {
       try {
         setIsLoading(true);
         // Fetch batches
-        const batchesResponse = await fetch("/api/batches");
+        const batchesResponse = await fetch("/api/batches", {
+          cache: "no-store",
+        });
         const batchesData = await batchesResponse.json();
         setBatches(batchesData);
 
         // Fetch ingredients for the dropdown
-        const ingredientsResponse = await fetch("/api/ingredients");
+        const ingredientsResponse = await fetch("/api/ingredients", {
+          cache: "no-store",
+        });
         const ingredientsData = await ingredientsResponse.json();
         setIngredients(ingredientsData);
       } catch (error) {
@@ -199,7 +203,9 @@ export default function BatchesPage() {
     setIsLoadingUsage(true);
 
     try {
-      const response = await fetch(`/api/batches/${batch.id}/usage`);
+      const response = await fetch(`/api/batches/${batch.id}/usage`, {
+        cache: "no-store",
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch batch usage data");
       }

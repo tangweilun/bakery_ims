@@ -3,10 +3,11 @@ import { salesService } from "@/lib/services/salesService";
 import { forecastService } from "@/lib/services/forecastService";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   console.log("[DEBUG] GET /api/forecasts - Request received");
   try {
-
     const forecasts = await prisma.demandForecast.findMany({
       orderBy: { createdAt: "desc" },
     });

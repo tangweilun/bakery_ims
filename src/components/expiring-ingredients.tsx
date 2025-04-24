@@ -34,7 +34,9 @@ export function ExpiringIngredients() {
   useEffect(() => {
     const fetchExpiringBatches = async () => {
       try {
-        const response = await fetch("/api/batches/expiring");
+        const response = await fetch("/api/batches/expiring", {
+          cache: "no-store",
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch expiring batches");
         }
@@ -42,7 +44,9 @@ export function ExpiringIngredients() {
         setExpiringBatches(data.expiringBatches);
       } catch (err) {
         console.error("Error fetching expiring batches:", err);
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -67,11 +71,21 @@ export function ExpiringIngredients() {
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={index}>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                <TableCell><Skeleton className="h-6 w-32 rounded-full" /></TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-20" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-28" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-32 rounded-full" />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -116,24 +130,29 @@ export function ExpiringIngredients() {
             const daysUntilExpiry = Math.ceil(
               (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
             );
-            
-            let status: "default" | "destructive" | "outline" | "secondary" = "default";
+
+            let status: "default" | "destructive" | "outline" | "secondary" =
+              "default";
             if (daysUntilExpiry <= 2) {
               status = "destructive";
             } else if (daysUntilExpiry <= 4) {
-              status = "secondary";  // Using "secondary" instead of "warning"
+              status = "secondary"; // Using "secondary" instead of "warning"
             } else {
               status = "default";
             }
 
             return (
               <TableRow key={batch.id}>
-                <TableCell className="font-medium">{batch.ingredient.name}</TableCell>
+                <TableCell className="font-medium">
+                  {batch.ingredient.name}
+                </TableCell>
                 <TableCell>{batch.ingredient.category}</TableCell>
                 <TableCell>
                   {batch.quantity} {batch.unit}
                 </TableCell>
-                <TableCell>{format(new Date(batch.expiryDate), "MMM d, yyyy")}</TableCell>
+                <TableCell>
+                  {format(new Date(batch.expiryDate), "MMM d, yyyy")}
+                </TableCell>
                 <TableCell>
                   <Badge variant={status}>
                     {daysUntilExpiry === 0

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { Batch, Prisma } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 // Define interfaces for the data structures
 interface IngredientUsage {
   ingredientId: number | string;

@@ -3,6 +3,8 @@ import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic"; // Ensure GET is dynamic
+
 // Input validation schema using Zod
 const ingredientSchema = z.object({
   name: z.string().min(1, "Name is required"),

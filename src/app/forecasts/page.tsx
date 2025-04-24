@@ -77,7 +77,7 @@ export default function ForecastsPage() {
       console.log("[DEBUG] Fetching recipes");
       setIsLoadingRecipes(true);
       try {
-        const response = await fetch("/api/recipes");
+        const response = await fetch("/api/recipes", { cache: "no-store" });
         if (!response.ok) {
           throw new Error("Failed to fetch recipes");
         }

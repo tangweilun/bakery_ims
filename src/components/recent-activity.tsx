@@ -52,7 +52,7 @@ export function RecentActivity() {
     async function fetchActivities() {
       setLoading(true); // Set loading to true before fetching
       try {
-        const response = await fetch("/api/activities");
+        const response = await fetch("/api/activities", { cache: "no-store" });
         const data = await response.json();
         setActivities(data);
       } catch (error) {

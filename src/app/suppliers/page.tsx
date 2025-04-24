@@ -71,7 +71,7 @@ export default function ManageSuppliers() {
     const fetchSuppliers = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch("/api/suppliers");
+        const res = await fetch("/api/suppliers", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to fetch suppliers");
         const data: Supplier[] = await res.json();
         setSuppliers(data);

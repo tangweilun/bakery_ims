@@ -90,7 +90,7 @@ export default function ManageIngredients() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch("/api/ingredients");
+        const response = await fetch("/api/ingredients", { cache: "no-store" });
         if (!response.ok) throw new Error("Failed to fetch ingredients");
         const data = await response.json();
         setIngredients(data);

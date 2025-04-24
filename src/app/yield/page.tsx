@@ -74,7 +74,7 @@ export default function YieldManagementPage() {
     async function fetchRecipes() {
       setIsLoadingRecipes(true);
       try {
-        const response = await fetch("/api/recipes");
+        const response = await fetch("/api/recipes", { cache: "no-store" });
         const data = await response.json();
         setRecipes(data);
       } catch (error) {
@@ -99,7 +99,9 @@ export default function YieldManagementPage() {
     async function fetchRecipeDetails() {
       setIsLoadingDetails(true);
       try {
-        const response = await fetch(`/api/recipes/${selectedRecipeId}`);
+        const response = await fetch(`/api/recipes/${selectedRecipeId}`, {
+          cache: "no-store",
+        });
         const data = (await response.json()) as RecipeWithIngredients;
         setRecipeDetails(data);
       } catch (error) {

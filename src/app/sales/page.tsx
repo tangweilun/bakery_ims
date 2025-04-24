@@ -113,7 +113,7 @@ export default function SalesPage() {
       setIsLoading(true);
       try {
         // Fetch sales
-        const salesResponse = await fetch("/api/sales");
+        const salesResponse = await fetch("/api/sales", { cache: "no-store" });
         if (!salesResponse.ok) {
           console.error("Sales API error:", salesResponse.status);
           setSales([]);
@@ -128,7 +128,9 @@ export default function SalesPage() {
         }
 
         // Fetch recipes
-        const recipesResponse = await fetch("/api/recipes");
+        const recipesResponse = await fetch("/api/recipes", {
+          cache: "no-store",
+        });
         if (!recipesResponse.ok) {
           console.error("Recipes API error:", recipesResponse.status);
           setRecipes([]);
