@@ -204,7 +204,9 @@ export default function YieldManagementPage() {
           data.message === "Insufficient non-expired stock" &&
           data.shortages
         ) {
+          console.log("Shortage condition MET. Shortages:", data.shortages);
           setShortages(data.shortages || []);
+          console.log("Calling setIsShortageDialogOpen(true)");
           setIsShortageDialogOpen(true);
         } else {
           toast.error(data.error || data.message || "Failed to update stock");
@@ -222,6 +224,12 @@ export default function YieldManagementPage() {
   const navigateToHistory = () => {
     router.push("/yield/history");
   };
+
+  // --- Add log inside the render function ---
+  console.log(
+    "Rendering YieldManagementPage, isShortageDialogOpen:",
+    isShortageDialogOpen
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -402,19 +410,29 @@ export default function YieldManagementPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Insufficient Stock</AlertDialogTitle>
             <AlertDialogDescription>
-              The following ingredients are insufficient to complete the recipe:
-              <ul className="list-disc pl-4 mt-2 space-y-1">
-                {shortages.map((item, index) => (
-                  <li key={index}>
-                    {item.name}: Need {item.needed} {item.unit}, Available{" "}
-                    {item.available} {item.unit}
-                  </li>
-                ))}
-              </ul>
+              Production cannot proceed due to stock issues.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="py-4 text-sm">
+            <p className="mb-2 text-muted-foreground">
+              The following ingredients are insufficient to complete the recipe:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              {shortages.map((item, index) => (
+                <li key={index}>
+                  <span className="font-medium">{item.name}</span>: Need{" "}
+                  {item.needed} {item.unit}, Available {item.available}{" "}
+                  {item.unit}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setIsShortageDialogOpen(false)}>
+              Close
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
