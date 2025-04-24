@@ -115,17 +115,43 @@ export async function POST(req: Request) {
 
     console.log("ingredientIds:", JSON.stringify(ingredientIds, null, 2));
 
-    // Fetch all ingredients with their available batches, ordered by expiry date ascending (NULLs last), then by received date ascending
+    // --- MODIFIED QUERY ---
+    const currentDate = new Date(); // Get current date/time
+    currentDate.setHours(0, 0, 0, 0); // Set to start of the day for consistent comparison
+
+    // Fetch all ingredients with their available NON-EXPIRED batches, ordered by expiry date ascending (NULLs last), then by received date ascending
     const ingredientsRecords = await prisma.ingredient.findMany({
-      where: { id: { in: ingredientIds.map((id) => Number(id)) } }, // Convert to numbers for Int IDs
+      where: { id: { in: ingredientIds.map((id) => Number(id)) } },
       include: {
         batches: {
-          where: { remainingQuantity: { gt: 0 } },
-          orderBy: [{ expiryDate: "asc" }, { receivedDate: "asc" }],
+          where: {
+            // Filter conditions for batches:
+            AND: [
+              // a) Must have remaining quantity
+              { remainingQuantity: { gt: 0 } },
+              // b) Must not be expired
+              {
+                OR: [
+                  { expiryDate: null }, // Batch has no expiry date
+                  { expiryDate: { gte: currentDate } }, // Batch expiry date is today or later
+                ],
+              },
+            ],
+          },
+          orderBy: [
+            // Order by expiry date ascending (NULLs treated as far future)
+            { expiryDate: { sort: "asc", nulls: "last" } },
+            // Then by received date ascending (FIFO for same/no expiry)
+            { receivedDate: "asc" },
+          ],
         },
       },
     });
-    console.log("ingredientsRecords count:", ingredientsRecords.length);
+    // --- END OF MODIFIED QUERY ---
+    console.log(
+      "Non-expired ingredientsRecords batches count:",
+      ingredientsRecords.reduce((sum, ing) => sum + ing.batches.length, 0)
+    );
 
     // Calculate total quantity needed for each ingredient (usage + wastage)
     const stockShortages: StockShortage[] = [];
@@ -141,7 +167,7 @@ export async function POST(req: Request) {
     );
     console.log("totalUsageMap:", Object.fromEntries(totalUsageMap));
 
-    // Check if we have enough stock for all ingredients
+    // Check if we have enough stock for all ingredients (using only non-expired batches)
     for (const ingredient of ingredientsRecords) {
       console.log(
         `Processing ingredient ${ingredient.id} (${ingredient.name})`
@@ -154,25 +180,35 @@ export async function POST(req: Request) {
           sum + batch.remainingQuantity,
         0
       );
-      console.log(`Total available for ${ingredient.name}: ${totalAvailable}`);
+      console.log(
+        `Total NON-EXPIRED available for ${ingredient.name}: ${totalAvailable}`
+      );
 
       if (totalNeeded > totalAvailable) {
-        console.log(`Shortage detected for ${ingredient.name}`);
+        console.log(
+          `Shortage detected for ${ingredient.name} (non-expired stock)`
+        );
         stockShortages.push({
           ingredientId: ingredient.id,
           name: ingredient.name,
           needed: parseFloat(totalNeeded.toFixed(2)),
-          available: parseFloat(totalAvailable.toFixed(2)),
+          available: parseFloat(totalAvailable.toFixed(2)), // Reflects non-expired stock
           unit: ingredient.unit,
         });
       }
     }
-    console.log("stockShortages:", JSON.stringify(stockShortages, null, 2));
+    console.log(
+      "stockShortages (based on non-expired):",
+      JSON.stringify(stockShortages, null, 2)
+    );
 
     if (stockShortages.length > 0) {
-      console.log("Error: Insufficient stock");
+      console.log("Error: Insufficient non-expired stock");
       return NextResponse.json(
-        { message: "Insufficient stock", shortages: stockShortages },
+        {
+          message: "Insufficient non-expired stock",
+          shortages: stockShortages,
+        },
         { status: 400 }
       );
     }
