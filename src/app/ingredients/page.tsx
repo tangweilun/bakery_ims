@@ -231,7 +231,7 @@ export default function ManageIngredients() {
   const clearFilters = () => {
     setSearchTerm("");
     setCategoryFilter("none");
-    setStockFilter("");
+    setStockFilter("none");
     setSortField("name");
     setSortDirection("asc");
   };
