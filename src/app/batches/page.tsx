@@ -336,7 +336,6 @@ export default function BatchesPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Label htmlFor="expiry-filter">Expiry Status</Label>
                 <Select
@@ -357,7 +356,6 @@ export default function BatchesPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Label htmlFor="search">Search</Label>
                 <div className="flex">
@@ -401,6 +399,7 @@ export default function BatchesPage() {
                     <TableHead>Remaining</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Received Date</TableHead>
+                    <TableHead>Expiry Date</TableHead>
                     <TableHead>Expiry Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -408,7 +407,7 @@ export default function BatchesPage() {
                 <TableBody>
                   {filteredBatches.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={9} className="text-center py-8">
                         No batches found matching your filters
                       </TableCell>
                     </TableRow>
@@ -432,6 +431,11 @@ export default function BatchesPage() {
                           <TableCell>{batch.location || "N/A"}</TableCell>
                           <TableCell>
                             {new Date(batch.receivedDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {batch.expiryDate
+                              ? new Date(batch.expiryDate).toLocaleDateString()
+                              : "N/A"}
                           </TableCell>
                           <TableCell>
                             <Badge className={badgeColor}>{expiryStatus}</Badge>
