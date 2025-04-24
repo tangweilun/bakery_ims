@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Recipe, RecipeIngredient } from "@/types/recipe";
+import { Recipe } from "@/types/recipe";
 import { Ingredient } from "@/types/ingredient";
 
 // Form validation schema
