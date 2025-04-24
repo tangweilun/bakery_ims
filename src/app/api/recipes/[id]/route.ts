@@ -150,14 +150,11 @@ export async function PATCH(
         // Update existing ingredients and create new ones
         console.log("--- Processing ingredients for update/create ---");
         for (const ingredient of recipeIngredients) {
-          // --- LOGGING: Ingredient being processed in loop ---
           console.log(
             "Processing ingredient from frontend:",
             JSON.stringify(ingredient, null, 2)
           );
-          // --- END LOGGING ---
 
-          // Basic validation
           if (
             !ingredient ||
             typeof ingredient.ingredientId !== "number" ||
@@ -167,7 +164,14 @@ export async function PATCH(
             continue;
           }
 
-          if (ingredient.id && ingredient.id > 0) {
+          // Check if frontend provided an ID AND if that ID actually existed in the DB for this recipe initially
+          const isExistingAndValid =
+            ingredient.id &&
+            ingredient.id > 0 &&
+            currentIngredients.some((dbIng) => dbIng.id === ingredient.id);
+
+          if (isExistingAndValid) {
+            // --- UPDATE block ---
             console.log(
               `Attempting to UPDATE RecipeIngredient with PK: ${ingredient.id}`
             );
@@ -175,11 +179,11 @@ export async function PATCH(
               await tx.recipeIngredient.update({
                 where: {
                   id: ingredient.id,
-                  // recipeId: recipeId, // Ensure it belongs to the correct recipe
+                  // recipeId: recipeId, // Optional constraint
                 },
                 data: {
                   quantity: ingredient.quantity,
-                  ingredientId: ingredient.ingredientId,
+                  ingredientId: ingredient.ingredientId, // Allow changing the ingredient itself
                 },
               });
               console.log(`UPDATE successful for PK: ${ingredient.id}`);
@@ -188,14 +192,23 @@ export async function PATCH(
                 `UPDATE FAILED for PK: ${ingredient.id}`,
                 updateError
               );
-              // Re-throw the error to rollback the transaction
-              throw updateError;
+              throw updateError; // Rollback transaction on update failure
             }
           } else {
-            console.log(
-              `Attempting to CREATE new RecipeIngredient for ingredientId: ${ingredient.ingredientId}`
-            );
-            // Create new ingredient (check if it already exists for this recipe first)
+            // --- CREATE block (or handle stale ID) ---
+            if (ingredient.id && ingredient.id > 0) {
+              // ID was provided but wasn't valid for this recipe initially
+              console.warn(
+                `Frontend provided PK ${ingredient.id}, but it was not found for recipe ${recipeId}. Treating as potential create.`
+              );
+            } else {
+              // No ID provided, definitely a create attempt
+              console.log(
+                `Attempting to CREATE new RecipeIngredient for ingredientId: ${ingredient.ingredientId}`
+              );
+            }
+
+            // Check if this ingredientId is already linked to the recipe (prevent duplicates)
             const existingLink = await tx.recipeIngredient.findUnique({
               where: {
                 recipeId_ingredientId: {
@@ -206,6 +219,7 @@ export async function PATCH(
             });
 
             if (!existingLink) {
+              // Safe to create
               await tx.recipeIngredient.create({
                 data: {
                   recipeId: recipeId,
@@ -217,11 +231,13 @@ export async function PATCH(
                 `CREATE successful for ingredientId: ${ingredient.ingredientId}`
               );
             } else {
+              // Ingredient link already exists. Decide what to do.
+              // Option 1: Warn and skip (safest to avoid accidental updates)
               console.warn(
-                `Ingredient ${ingredient.ingredientId} already exists for recipe ${recipeId}. Skipping creation.`
+                `Ingredient ${ingredient.ingredientId} already linked to recipe ${recipeId} (Link ID: ${existingLink.id}). Skipping creation/update for this item.`
               );
-              // Optionally update if needed:
-              // console.log(`Updating existing RecipeIngredient Link ID: ${existingLink.id} instead of creating.`);
+              // Option 2: Update the existing link's quantity (if that's desired behavior)
+              // console.log(`Updating quantity for existing link ID: ${existingLink.id}`);
               // await tx.recipeIngredient.update({
               //   where: { id: existingLink.id },
               //   data: { quantity: ingredient.quantity }

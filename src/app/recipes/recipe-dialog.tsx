@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -66,15 +66,25 @@ interface RecipeDialogProps {
   onSave: (recipe: Partial<Recipe>) => void;
 }
 
+// Define the type fetched from /api/recipes/[id]/ingredients
+type FetchedRecipeIngredient = {
+  id: number; // PK of RecipeIngredient link
+  recipeId: number;
+  ingredientId: number;
+  quantity: number;
+  name: string; // from included ingredient
+  unit: string; // from included ingredient
+};
+
 export function RecipeDialog({
   open,
   onOpenChange,
   recipe,
   onSave,
 }: RecipeDialogProps) {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [allIngredients, setAllIngredients] = useState<Ingredient[]>([]);
   const [recipeIngredients, setRecipeIngredients] = useState<
-    (RecipeIngredient & { name: string; unit: string })[]
+    FetchedRecipeIngredient[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingIngredients, setLoadingIngredients] = useState(false);
@@ -97,66 +107,94 @@ export function RecipeDialog({
     },
   });
 
-  // Fetch ingredients for select item UI
+  // --- Effect 1: Fetch ALL ingredients (for dropdown) when dialog opens ---
   useEffect(() => {
-    const fetchIngredients = async () => {
+    const fetchAllIngredients = async () => {
       setLoadingIngredients(true);
       try {
-        const response = await fetch("/api/ingredients");
-        if (!response.ok) throw new Error("Failed to fetch ingredients");
-        const data = await response.json();
-        setIngredients(data);
+        console.log("Dialog open: Fetching all ingredients list...");
+        const response = await fetch("/api/ingredients", { cache: "no-store" }); // Use no-store
+        if (!response.ok) throw new Error("Failed to fetch ingredients list");
+        const data: Ingredient[] = await response.json();
+        setAllIngredients(data);
       } catch (error) {
-        console.error("Error fetching ingredients:", error);
-        toast.error("Failed to load ingredients. Please try again.");
+        console.error("Error fetching all ingredients:", error);
+        toast.error("Failed to load ingredients list.");
+        setAllIngredients([]); // Clear on error
       } finally {
         setLoadingIngredients(false);
       }
     };
 
     if (open) {
-      fetchIngredients();
+      fetchAllIngredients();
+    } else {
+      setAllIngredients([]); // Clear list when dialog closes
     }
   }, [open]);
 
-  // Fetch recipe ingredients if editing
+  // --- Effect 2: Fetch CURRENT recipe's ingredients OR reset when 'open' or 'recipe' changes ---
   useEffect(() => {
-    const fetchRecipeIngredients = async (recipeId: number) => {
+    const fetchCurrentRecipeIngredients = async (recipeId: number) => {
+      console.log(`Fetching ingredients for current recipe ID: ${recipeId}`);
       setLoadingRecipeIngredients(true);
+      setRecipeIngredients([]); // Clear previous state immediately
       try {
-        const response = await fetch(`/api/recipes/${recipeId}/ingredients`);
+        // Fetch from the correct endpoint
+        const response = await fetch(`/api/recipes/${recipeId}/ingredients`, {
+          cache: "no-store",
+        });
         if (!response.ok) throw new Error("Failed to fetch recipe ingredients");
-        const data = await response.json();
-        setRecipeIngredients(data);
+        // Use the specific type for the fetched data
+        const data: FetchedRecipeIngredient[] = await response.json();
+        console.log("Fetched CURRENT recipe ingredients:", data);
+        setRecipeIngredients(data); // Set the fresh data with correct IDs
       } catch (error) {
-        console.error("Error fetching recipe ingredients:", error);
-        toast.error("Failed to load recipe ingredients. Please try again.");
+        console.error("Error fetching current recipe ingredients:", error);
+        toast.error("Failed to load current recipe ingredients.");
+        setRecipeIngredients([]); // Clear on error
       } finally {
         setLoadingRecipeIngredients(false);
       }
     };
 
-    if (recipe?.id) {
-      fetchRecipeIngredients(recipe.id);
+    if (open) {
+      if (recipe?.id) {
+        // If dialog is open AND we are editing an existing recipe
+        fetchCurrentRecipeIngredients(recipe.id);
+      } else {
+        // If dialog is open AND we are creating a new recipe
+        console.log(
+          "Dialog open for NEW recipe, resetting recipeIngredients state."
+        );
+        setRecipeIngredients([]); // Reset for new recipe
+        setLoadingRecipeIngredients(false);
+      }
     } else {
+      // If dialog is closed, reset everything
       setRecipeIngredients([]);
+      setLoadingRecipeIngredients(false);
     }
-  }, [recipe]);
+    // Dependencies: Trigger when dialog opens/closes OR when the recipe object changes
+  }, [open, recipe]);
 
-  // Populate form when editing
+  // --- Effect 3: Populate form fields when 'recipe' prop changes ---
   useEffect(() => {
     if (recipe) {
+      console.log("Populating form for recipe ID:", recipe.id);
       form.reset({
         name: recipe.name,
         description: recipe.description || "",
         category: recipe.category,
-        preparationTime: recipe.preparationTime || 0,
-        bakingTime: recipe.bakingTime || 0,
+        preparationTime: recipe.preparationTime ?? 0, // Use nullish coalescing
+        bakingTime: recipe.bakingTime ?? 0, // Use nullish coalescing
         yieldQuantity: recipe.yieldQuantity,
         instructions: recipe.instructions || "",
-        sellingPrice: recipe.sellingPrice,
+        sellingPrice: recipe.sellingPrice ?? 0, // Use nullish coalescing
       });
     } else {
+      // Reset form for a new recipe or when recipe is null
+      console.log("Resetting form.");
       form.reset({
         name: "",
         description: "",
@@ -167,20 +205,20 @@ export function RecipeDialog({
         instructions: "",
         sellingPrice: 0,
       });
-      setRecipeIngredients([]);
     }
+    // Dependency: Only when the recipe object itself changes. 'form' is stable.
   }, [recipe, form]);
 
   // Add ingredient to recipe
   const handleAddIngredient = () => {
-    setRecipeIngredients([
-      ...recipeIngredients,
+    setRecipeIngredients((prev) => [
+      ...prev,
       {
         id: 0,
         recipeId: recipe?.id || 0,
         ingredientId: 0,
         quantity: 0,
-        name: "",
+        name: "Select...",
         unit: "",
       },
     ]);
@@ -188,63 +226,71 @@ export function RecipeDialog({
 
   // Remove ingredient from recipe
   const handleRemoveIngredient = (index: number) => {
-    const updatedIngredients = [...recipeIngredients];
-    updatedIngredients.splice(index, 1);
-    setRecipeIngredients(updatedIngredients);
+    setRecipeIngredients((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Update ingredient details
   const handleIngredientChange = (
     index: number,
-    field: string,
-    value: unknown
+    field: "ingredientId" | "quantity",
+    value: string | number
   ) => {
-    const updatedIngredients = [...recipeIngredients];
+    setRecipeIngredients((prev) => {
+      const updated = [...prev];
+      const currentItem = updated[index];
 
-    if (field === "ingredientId") {
-      const selectedIngredient = ingredients.find(
-        (i) => i.id === Number(value)
-      );
-      if (selectedIngredient) {
-        updatedIngredients[index] = {
-          ...updatedIngredients[index],
-          ingredientId: Number(value),
-          name: selectedIngredient.name,
-          unit: selectedIngredient.unit,
-        };
+      if (field === "ingredientId") {
+        const selectedId = Number(value);
+        const selectedMasterIngredient = allIngredients.find(
+          (i) => i.id === selectedId
+        );
+        if (selectedMasterIngredient) {
+          updated[index] = {
+            ...currentItem,
+            ingredientId: selectedId,
+            name: selectedMasterIngredient.name,
+            unit: selectedMasterIngredient.unit,
+          };
+        } else {
+          updated[index] = {
+            ...currentItem,
+            ingredientId: 0,
+            name: "Select...",
+            unit: "",
+          };
+        }
+      } else if (field === "quantity") {
+        const numValue = Number(value);
+        updated[index] = { ...currentItem, quantity: Math.max(0, numValue) };
       }
-    } else {
-      updatedIngredients[index] = {
-        ...updatedIngredients[index],
-        [field]: field === "quantity" ? Number(value) : value,
-      };
-    }
-
-    setRecipeIngredients(updatedIngredients);
+      return updated;
+    });
   };
 
   // Form submission
-  const onSubmit = async (data: RecipeFormValues) => {
-    // Validate ingredients
-    const hasInvalidIngredients = recipeIngredients.some(
-      (ing) => ing.ingredientId === 0 || ing.quantity <= 0
+  const onSubmit = async (formData: RecipeFormValues) => {
+    console.log("Form submitted. Validating ingredients...");
+    const invalidIngredient = recipeIngredients.find(
+      (ing) => !ing.ingredientId || ing.ingredientId <= 0 || ing.quantity <= 0
     );
 
     if (recipeIngredients.length === 0) {
-      toast.error("Please add at least one ingredient to the recipe");
+      toast.error("Please add at least one ingredient.");
       return;
     }
 
-    if (hasInvalidIngredients) {
+    if (invalidIngredient) {
       toast.error(
-        "Please ensure all ingredients are selected and have valid quantities"
+        `Please select a valid ingredient and enter a positive quantity for "${
+          invalidIngredient.name ||
+          `row ${recipeIngredients.indexOf(invalidIngredient) + 1}`
+        }".`
       );
       return;
     }
 
-    // Prepare data for submission
-    const recipeData = {
-      ...data,
+    const recipeDataToSave = {
+      ...formData,
       id: recipe?.id,
       recipeIngredients: recipeIngredients.map((ing) => ({
         ingredientId: ing.ingredientId,
@@ -253,9 +299,16 @@ export function RecipeDialog({
       })),
     };
 
+    console.log(
+      "Submitting data to onSave callback:",
+      JSON.stringify(recipeDataToSave, null, 2)
+    );
     setIsLoading(true);
     try {
-      await onSave(recipeData);
+      await onSave(recipeDataToSave);
+    } catch (error) {
+      console.error("Error during onSave processing:", error);
+      toast.error("Failed to save recipe.");
     } finally {
       setIsLoading(false);
     }
@@ -279,8 +332,7 @@ export function RecipeDialog({
         </DialogHeader>
 
         <Form {...form}>
-          {/* Ingredients Section */}
-          <div className="space-y-4">
+          <div className="space-y-4 mb-6">
             <div className="flex justify-between items-center">
               <h3 className="font-medium text-lg">Recipe Ingredients</h3>
               <Button
@@ -288,6 +340,7 @@ export function RecipeDialog({
                 variant="outline"
                 size="sm"
                 onClick={handleAddIngredient}
+                disabled={loadingIngredients}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Ingredient
@@ -298,39 +351,48 @@ export function RecipeDialog({
               <div className="space-y-3">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
               </div>
             ) : recipeIngredients.length === 0 ? (
               <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                No ingredients added yet. Click &quot;Add Ingredient&quot; to
-                start.
+                No ingredients added yet. Click &quot;Add Ingredient&quot;.
               </div>
             ) : (
               <div className="space-y-3">
                 {recipeIngredients.map((ingredient, index) => (
                   <div
-                    key={index}
-                    className="flex gap-3 items-end p-3 border rounded-md"
+                    key={ingredient.id || `new-${index}`}
+                    className="flex gap-3 items-end p-3 border rounded-md bg-muted/30"
                   >
                     <div className="flex-1">
                       <FormLabel className="text-xs">Ingredient</FormLabel>
                       <Select
-                        value={ingredient.ingredientId.toString()}
+                        value={
+                          ingredient.ingredientId > 0
+                            ? ingredient.ingredientId.toString()
+                            : ""
+                        }
                         onValueChange={(value) =>
                           handleIngredientChange(index, "ingredientId", value)
                         }
+                        disabled={loadingIngredients}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select ingredient" />
                         </SelectTrigger>
                         <SelectContent>
-                          {ingredients.map((ing) => (
+                          <SelectItem value="none" disabled>
+                            Select...
+                          </SelectItem>
+                          {allIngredients.map((ing) => (
                             <SelectItem key={ing.id} value={ing.id.toString()}>
                               {ing.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {ingredient.ingredientId <= 0 && (
+                        <p className="text-xs text-red-500 mt-1">Required</p>
+                      )}
                     </div>
 
                     <div className="w-24">
@@ -338,8 +400,8 @@ export function RecipeDialog({
                       <Input
                         type="number"
                         min="0"
-                        step="0.01"
-                        value={ingredient.quantity}
+                        step="any"
+                        value={ingredient.quantity.toString()}
                         onChange={(e) =>
                           handleIngredientChange(
                             index,
@@ -347,12 +409,23 @@ export function RecipeDialog({
                             e.target.value
                           )
                         }
+                        placeholder="Qty"
+                        className={
+                          ingredient.quantity <= 0 ? "border-red-500" : ""
+                        }
                       />
+                      {ingredient.quantity <= 0 && (
+                        <p className="text-xs text-red-500 mt-1">Required</p>
+                      )}
                     </div>
 
-                    <div className="w-20">
-                      <FormLabel className="text-xs">Unit</FormLabel>
-                      <Input type="text" value={ingredient.unit} disabled />
+                    <div className="w-20 pt-5">
+                      <Input
+                        type="text"
+                        value={ingredient.unit || "unit"}
+                        disabled
+                        className="mt-1 bg-transparent border-none text-muted-foreground text-sm"
+                      />
                     </div>
 
                     <Button
@@ -360,7 +433,8 @@ export function RecipeDialog({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveIngredient(index)}
-                      className="text-destructive"
+                      className="text-destructive hover:bg-destructive/10"
+                      title="Remove Ingredient"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -370,10 +444,10 @@ export function RecipeDialog({
             )}
           </div>
 
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 mt-6"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <h3 className="font-medium text-lg border-t pt-4">
+              Recipe Details
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -395,16 +469,16 @@ export function RecipeDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="none" disabled>
+                          Select...
+                        </SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category} value={category}>
                             {category}
@@ -422,7 +496,7 @@ export function RecipeDialog({
                 name="sellingPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Selling Price</FormLabel>
+                    <FormLabel>Selling Price ($)</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" min="0" {...field} />
                     </FormControl>
@@ -436,7 +510,7 @@ export function RecipeDialog({
                 name="preparationTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preparation Time (min)</FormLabel>
+                    <FormLabel>Prep Time (min)</FormLabel>
                     <FormControl>
                       <Input type="number" min="0" {...field} />
                     </FormControl>
@@ -450,7 +524,7 @@ export function RecipeDialog({
                 name="bakingTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Baking Time (min)</FormLabel>
+                    <FormLabel>Bake Time (min)</FormLabel>
                     <FormControl>
                       <Input type="number" min="0" {...field} />
                     </FormControl>
@@ -466,7 +540,7 @@ export function RecipeDialog({
                   <FormItem>
                     <FormLabel>Yield Quantity</FormLabel>
                     <FormControl>
-                      <Input type="number" min="1" {...field} />
+                      <Input type="number" min="1" step="1" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -481,8 +555,12 @@ export function RecipeDialog({
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Brief description of the recipe"
-                        {...field}
+                        placeholder="Brief description (optional)"
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
@@ -498,9 +576,13 @@ export function RecipeDialog({
                     <FormLabel>Instructions</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Detailed preparation instructions"
+                        placeholder="Detailed instructions (optional)"
                         className="min-h-[100px]"
-                        {...field}
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
@@ -509,11 +591,12 @@ export function RecipeDialog({
               />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
