@@ -157,25 +157,42 @@ export async function POST(request: NextRequest) {
 // GET all ingredients
 export async function GET() {
   try {
-    // 1. Aggregate remaining quantities from Batches for active ingredients
+    const currentDate = new Date(); // Get current date/time
+    currentDate.setHours(0, 0, 0, 0); // Set to start of the day for consistent comparison
+
+    // 1. Aggregate remaining quantities from non-expired Batches for active ingredients
     const batchAggregations = await prisma.batch.groupBy({
       by: ["ingredientId"],
       _sum: {
         remainingQuantity: true,
       },
       where: {
-        // Only consider batches linked to ingredients that are active
-        ingredient: {
-          isActive: true,
-        },
-        // Optional: Only sum batches that themselves have remaining quantity > 0
-        // remainingQuantity: {
-        //   gt: 0
-        // }
+        // Filter condition for batches:
+        AND: [
+          // a) Must be linked to an active ingredient
+          {
+            ingredient: {
+              isActive: true,
+            },
+          },
+          // b) Must not be expired
+          {
+            OR: [
+              { expiryDate: null }, // Batch has no expiry date
+              { expiryDate: { gte: currentDate } }, // Batch expiry date is today or later
+            ],
+          },
+          // c) Optional: Only sum batches that actually have remaining quantity
+          // {
+          //   remainingQuantity: {
+          //     gt: 0
+          //   }
+          // }
+        ],
       },
     });
 
-    // Create a map for easy lookup: ingredientId -> totalRemainingQuantity
+    // Create a map for easy lookup: ingredientId -> totalNonExpiredRemainingQuantity
     const stockMap = new Map<number, number>();
     batchAggregations.forEach((agg) => {
       stockMap.set(agg.ingredientId, agg._sum.remainingQuantity ?? 0);
@@ -192,10 +209,10 @@ export async function GET() {
       },
     });
 
-    // 3. Map ingredients and replace/add the calculated currentStock
+    // 3. Map ingredients and replace/add the calculated currentStock (from non-expired batches)
     const ingredientsWithCalculatedStock = ingredients.map((ingredient) => ({
       ...ingredient,
-      // Replace the stored currentStock with the calculated sum from batches
+      // Replace the stored currentStock with the calculated sum from non-expired batches
       currentStock: stockMap.get(ingredient.id) ?? 0,
     }));
 
