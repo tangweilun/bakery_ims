@@ -200,7 +200,10 @@ export default function YieldManagementPage() {
       if (response.ok) {
         toast.success("Stock updated successfully");
       } else {
-        if (data.message === "Insufficient stock" && data.shortages) {
+        if (
+          data.message === "Insufficient non-expired stock" &&
+          data.shortages
+        ) {
           setShortages(data.shortages || []);
           setIsShortageDialogOpen(true);
         } else {
