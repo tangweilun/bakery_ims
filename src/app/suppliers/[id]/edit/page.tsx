@@ -115,6 +115,8 @@ export default function EditSupplier() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!supplierId) {
       setError("No supplier ID available");
+      // Optionally add a toast here too if you want user feedback for this specific case
+      // toast.error("Cannot save: Supplier ID is missing.");
       return;
     }
 
@@ -132,19 +134,30 @@ export default function EditSupplier() {
 
       if (!res.ok) {
         const errorData = await res.json();
+        // Keep the existing error handling, but throw to catch block
         throw new Error(errorData.message || "Failed to update supplier");
       }
 
+      // --- Add success toast ---
+      toast.success("Supplier updated successfully!");
+
       // Redirect back to suppliers list on success
       router.push("/suppliers");
-      router.refresh();
+      // router.refresh(); // Keep or remove refresh based on whether you need it after push
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Error updating supplier:", error);
-        setError(
+        const errorMessage =
           error.message ||
-            "An error occurred while updating the supplier. Please try again."
-        );
+          "An error occurred while updating the supplier. Please try again.";
+        console.error("Error updating supplier:", error);
+        setError(errorMessage);
+        // --- Add error toast ---
+        toast.error(errorMessage);
+      } else {
+        // Handle non-Error objects if necessary
+        const genericMessage = "An unknown error occurred.";
+        setError(genericMessage);
+        toast.error(genericMessage);
       }
     } finally {
       setIsSubmitting(false);
