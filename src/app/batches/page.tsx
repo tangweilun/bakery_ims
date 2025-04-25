@@ -48,11 +48,63 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Search, AlertTriangle, Trash2 } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Batch, BatchUsageData } from "@/types/batch";
-import { Ingredient } from "@/types/ingredient";
 import { MainNav } from "@/components/main-nav";
 import { UserNav } from "@/components/user-nav";
 import { toast } from "react-toastify";
+
+// Define types here to avoid import issues
+interface Ingredient {
+  id: number;
+  name: string;
+  unit: string;
+}
+
+interface Batch {
+  id: number;
+  batchNumber: string;
+  ingredientId: number;
+  quantity: number;
+  remainingQuantity: number;
+  cost: number;
+  receivedDate: Date;
+  expiryDate: Date | null;
+  location: string | null;
+  notes: string | null;
+  ingredient: Ingredient;
+}
+
+interface BatchUsage {
+  id: number;
+  batchId: number;
+  quantityUsed: number;
+  createdAt: Date;
+  usageRecord: {
+    id: number;
+    reason: string;
+    notes: string | null;
+    user: {
+      name: string | null;
+      email: string;
+    };
+    productionRecord: {
+      quantity: number;
+      recipe: {
+        name: string;
+      };
+    } | null;
+  };
+}
+
+interface BatchUsageData {
+  batch: Batch;
+  batchUsages: BatchUsage[];
+}
+
+interface FormErrors {
+  ingredientId?: string;
+  quantity?: string;
+  cost?: string;
+}
 
 export default function BatchesPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -73,6 +125,9 @@ export default function BatchesPage() {
     search: "",
   });
 
+  // Form errors state
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+
   // Form state for adding new batch
   const [newBatch, setNewBatch] = useState({
     batchNumber: "",
@@ -84,6 +139,63 @@ export default function BatchesPage() {
     location: "",
     notes: "",
   });
+
+  // Validate individual fields as they change
+  const validateField = (name: string, value: number | string | Date | null): string | undefined => {
+    switch (name) {
+      case "ingredientId":
+        return value === 0 ? "Please select an ingredient" : undefined;
+      case "quantity":
+        if (isNaN(Number(value)) || Number(value) <= 0) {
+          return "Quantity must be a positive number";
+        }
+        return undefined;
+      case "cost":
+        if (isNaN(Number(value)) || Number(value) < 0) {
+          return "Cost must be a non-negative number";
+        }
+        return undefined;
+      default:
+        return undefined;
+    }
+  };
+
+  // Helper function to check if the add form is valid
+  const isAddBatchFormValid = (): boolean => {
+    const errors: FormErrors = {};
+
+    // Validate each field
+    const ingredientIdError = validateField(
+      "ingredientId",
+      newBatch.ingredientId
+    );
+    if (ingredientIdError) errors.ingredientId = ingredientIdError;
+
+    const quantityError = validateField("quantity", newBatch.quantity);
+    if (quantityError) errors.quantity = quantityError;
+
+    const costError = validateField("cost", newBatch.cost);
+    if (costError) errors.cost = costError;
+
+    // Update form errors state (but don't return it yet)
+    setFormErrors(errors);
+
+    // Return whether the form is valid (no errors)
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle field change
+  const handleFieldChange = (name: string, value: number | string | Date | null) => {
+    // Update the form data
+    setNewBatch((prev) => ({ ...prev, [name]: value }));
+
+    // Validate the field and update errors
+    const error = validateField(name, value);
+    setFormErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -121,8 +233,17 @@ export default function BatchesPage() {
   };
 
   const handleAddBatch = async () => {
-    const batchNumber = generateBatchNumber(); // Auto-generate batch number
+    // Run validation
+    if (!isAddBatchFormValid()) {
+      // Validation failed, form errors are already set
+      return;
+    }
+
+    // If execution reaches this point, validation passed.
+    const batchNumber = generateBatchNumber();
+
     try {
+      // API call is safe to proceed
       const response = await fetch("/api/batches", {
         method: "POST",
         headers: {
@@ -132,7 +253,15 @@ export default function BatchesPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to add batch");
+        // Try to parse error from backend
+        let errorMessage = "Failed to add batch";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Ignore if response is not JSON
+        }
+        throw new Error(errorMessage);
       }
 
       const addedBatch = await response.json();
@@ -140,7 +269,7 @@ export default function BatchesPage() {
       toast.success("Batch added successfully!");
       setIsAddDialogOpen(false);
 
-      // Reset form
+      // Reset form and errors
       setNewBatch({
         batchNumber: "",
         ingredientId: 0,
@@ -151,9 +280,13 @@ export default function BatchesPage() {
         location: "",
         notes: "",
       });
+      setFormErrors({});
     } catch (error) {
       console.error("Error adding batch:", error);
-      toast.error("Error adding batch");
+      // Display specific error from backend if available, otherwise generic message
+      const displayMessage =
+        error instanceof Error ? error.message : "Error adding batch";
+      toast.error(displayMessage);
     }
   };
 
@@ -506,13 +639,11 @@ export default function BatchesPage() {
                         (ingredient) => ingredient.id.toString() === value
                       );
 
-                      setNewBatch({
-                        ...newBatch,
-                        ingredientId: parseInt(value),
-                        ingredientName: selectedIngredient
-                          ? selectedIngredient.name
-                          : "", // Ensure name is set
-                      });
+                      handleFieldChange("ingredientId", parseInt(value));
+                      handleFieldChange(
+                        "ingredientName",
+                        selectedIngredient ? selectedIngredient.name : ""
+                      );
                     }}
                   >
                     <SelectTrigger id="ingredient">
@@ -539,6 +670,11 @@ export default function BatchesPage() {
                       )}
                     </SelectContent>
                   </Select>
+                  {formErrors.ingredientId && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {formErrors.ingredientId}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -548,13 +684,15 @@ export default function BatchesPage() {
                     type="number"
                     value={newBatch.quantity || ""}
                     onChange={(e) =>
-                      setNewBatch({
-                        ...newBatch,
-                        quantity: parseFloat(e.target.value),
-                      })
+                      handleFieldChange("quantity", parseFloat(e.target.value))
                     }
                     placeholder="Enter quantity"
                   />
+                  {formErrors.quantity && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {formErrors.quantity}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -564,13 +702,15 @@ export default function BatchesPage() {
                     type="number"
                     value={newBatch.cost || ""}
                     onChange={(e) =>
-                      setNewBatch({
-                        ...newBatch,
-                        cost: parseFloat(e.target.value),
-                      })
+                      handleFieldChange("cost", parseFloat(e.target.value))
                     }
                     placeholder="Enter cost"
                   />
+                  {formErrors.cost && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {formErrors.cost}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -614,7 +754,10 @@ export default function BatchesPage() {
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setIsAddDialogOpen(false)}
+                onClick={() => {
+                  setIsAddDialogOpen(false);
+                  setFormErrors({});
+                }}
               >
                 Cancel
               </Button>
