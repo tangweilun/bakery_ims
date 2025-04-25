@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { createClient } from "@/utils/supabase/server";
 
-export const dynamic = "force-dynamic";
-
 interface SaleItem {
   recipeId: number; // Changed from string to number
   quantity: number;
