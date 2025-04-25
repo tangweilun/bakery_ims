@@ -264,13 +264,19 @@ export default function BatchesPage() {
     }
 
     // Filter by expiry status
-    if (filter.expiryStatus !== "all") {
-      const status = getExpiryStatus(batch.expiryDate)
-        .toLowerCase()
-        .replace(" ", "");
-      if (filter.expiryStatus !== status) {
-        return false;
+    const status = getExpiryStatus(batch.expiryDate)
+      .toLowerCase()
+      .replace(" ", "");
+
+    if (filter.expiryStatus === "activeonly") {
+      if (status === "expired") {
+        return false; // Exclude expired if 'activeonly' is selected
       }
+    } else if (
+      filter.expiryStatus !== "all" &&
+      filter.expiryStatus !== status
+    ) {
+      return false; // Normal filtering for other specific statuses
     }
 
     // Filter by search term (batch number, location, or notes)
@@ -358,6 +364,9 @@ export default function BatchesPage() {
                     <SelectItem value="expired">Expired</SelectItem>
                     <SelectItem value="expiringsoon">Expiring Soon</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="activeonly">
+                      Active Only (Incl. Soon & No Expiry)
+                    </SelectItem>
                     <SelectItem value="noexpiry">No Expiry</SelectItem>
                   </SelectContent>
                 </Select>

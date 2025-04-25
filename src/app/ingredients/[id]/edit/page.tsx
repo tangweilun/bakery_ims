@@ -91,12 +91,15 @@ export default function EditIngredientPage() {
 
     const fetchIngredient = async () => {
       if (!ingredientId) return;
+      setLoading(true); // Ensure loading is true before fetch
+      setError(null); // Reset error state
 
       try {
         const response = await fetch(`/api/ingredients/${ingredientId}`);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch ingredient");
+          const errorData = await response.json().catch(() => ({})); // Try to parse error
+          throw new Error(errorData.error || "Failed to fetch ingredient");
         }
 
         const data = await response.json();
@@ -105,9 +108,9 @@ export default function EditIngredientPage() {
           description: data.description || "",
           category: data.category,
           unit: data.unit,
-          minimumStock: data.minimumStock,
-          idealStock: data.idealStock,
-          cost: data.cost,
+          minimumStock: data.minimumStock ?? 0, // Use nullish coalescing for default
+          idealStock: data.idealStock ?? 0, // Use nullish coalescing for default
+          cost: data.cost ?? 0, // Use nullish coalescing for default
           supplierId: data.supplierId,
         });
 
@@ -117,16 +120,17 @@ export default function EditIngredientPage() {
           const suppliersData = await suppliersResponse.json();
           setSuppliers(suppliersData);
         } else {
+          console.warn("Could not load suppliers");
           toast.warning("Could not load suppliers");
         }
-
-        setLoading(false);
       } catch (err) {
         if (err instanceof Error) {
+          console.error("Error fetching ingredient:", err);
           setError(err.message);
-          setLoading(false);
           toast.error(`Error: ${err.message}`);
         }
+      } finally {
+        setLoading(false); // Set loading false in finally block
       }
     };
 
@@ -142,14 +146,32 @@ export default function EditIngredientPage() {
   ) => {
     const { name, value, type } = e.target;
 
+    // Ensure numeric inputs are handled correctly
+    let processedValue: string | number = value;
+    if (type === "number") {
+      // Allow empty string temporarily, convert to number on submit/validation
+      processedValue = value === "" ? "" : parseFloat(value);
+      // If parseFloat results in NaN (e.g., from just "-"), keep it as the string for now
+      if (isNaN(processedValue as number) && value !== "" && value !== "-") {
+        processedValue = 0; // Or handle as invalid input
+      }
+    }
+
     setIngredient((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseFloat(value) : value,
+      [name]: processedValue,
     }));
   };
 
   // Handle select changes for category, unit, and supplier
   const handleSelectChange = (value: string, field: string) => {
+    // Prevent setting 'none' or empty string as actual value for required fields
+    if (
+      (field === "category" || field === "unit") &&
+      (value === "none" || value === "")
+    ) {
+      return; // Or set to a default/previous value if needed
+    }
     setIngredient((prev) => ({
       ...prev,
       [field]: value,
@@ -160,35 +182,81 @@ export default function EditIngredientPage() {
   const handleSupplierChange = (value: string) => {
     setIngredient((prev) => ({
       ...prev,
-      supplierId: value === "none" ? null : parseInt(value),
+      // Parse to integer or set to null if 'none'
+      supplierId: value === "none" ? null : parseInt(value, 10),
     }));
   };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // --- VALIDATION ---
+    // Convert potentially string numbers from state to actual numbers for comparison
+    const minStock = parseFloat(String(ingredient.minimumStock));
+    const idealStock = parseFloat(String(ingredient.idealStock));
+
+    if (isNaN(minStock) || isNaN(idealStock)) {
+      toast.error("Minimum and Ideal stock levels must be valid numbers.");
+      return; // Stop if conversion failed
+    }
+
+    // Check if minimumStock > idealStock
+    if (minStock > idealStock) {
+      toast.error(
+        "Minimum Stock level cannot be greater than Ideal Stock level."
+      );
+      return; // Stop submission
+    }
+    // --- END VALIDATION ---
+
     setSaving(true);
     setError(null);
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const userId = user?.id;
+      // Removed userId fetch/inclusion as it's usually handled by backend based on session
+      // const { data: { user } } = await supabase.auth.getUser();
+      // const userId = user?.id;
+
+      // Prepare data, ensuring numeric fields are numbers
+      const dataToSend = {
+        name: ingredient.name,
+        description: ingredient.description,
+        category: ingredient.category,
+        unit: ingredient.unit,
+        minimumStock: minStock, // Use validated number
+        idealStock: idealStock, // Use validated number
+        cost: parseFloat(String(ingredient.cost)), // Ensure cost is number
+        supplierId: ingredient.supplierId,
+      };
+
+      // Validate required fields before sending
+      if (
+        !dataToSend.name ||
+        !dataToSend.category ||
+        !dataToSend.unit ||
+        isNaN(dataToSend.cost) ||
+        dataToSend.cost < 0 ||
+        isNaN(dataToSend.minimumStock) ||
+        dataToSend.minimumStock < 0 ||
+        isNaN(dataToSend.idealStock) ||
+        dataToSend.idealStock < 0
+      ) {
+        toast.error("Please fill in all required fields with valid values.");
+        setSaving(false);
+        return;
+      }
 
       const response = await fetch(`/api/ingredients/${ingredientId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...ingredient,
-          userId,
-        }),
+        body: JSON.stringify(dataToSend), // Send prepared data
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({})); // Try to parse error
         throw new Error(errorData.error || "Failed to update ingredient");
       }
 
@@ -196,13 +264,39 @@ export default function EditIngredientPage() {
 
       // Redirect to manage ingredient page
       router.push(`/ingredients`);
+      router.refresh(); // Optional: force refresh of the target page data
     } catch (err) {
       if (err instanceof Error) {
+        console.error("Error updating ingredient:", err);
         setError(err.message);
-        setSaving(false);
         toast.error(`Error: ${err.message}`);
       }
+    } finally {
+      setSaving(false); // Ensure saving is set to false in finally
     }
+  };
+
+  // --- RENDER LOGIC ---
+  // Helper to check if form is generally valid for enabling submit button
+  const isFormValid = () => {
+    const minStock = parseFloat(String(ingredient.minimumStock));
+    const idealStock = parseFloat(String(ingredient.idealStock));
+    const cost = parseFloat(String(ingredient.cost));
+
+    return (
+      ingredient.name.trim() !== "" &&
+      ingredient.category &&
+      ingredient.category !== "none" &&
+      ingredient.unit &&
+      ingredient.unit !== "none" &&
+      !isNaN(cost) &&
+      cost >= 0 && // Cost can be 0
+      !isNaN(minStock) &&
+      minStock >= 0 &&
+      !isNaN(idealStock) &&
+      idealStock >= 0 &&
+      minStock <= idealStock // Include our validation check here too
+    );
   };
 
   // Main layout that's consistent across all states
@@ -273,7 +367,7 @@ export default function EditIngredientPage() {
             )}
 
             {/* Form */}
-            {!error || ingredient.name ? (
+            {(!error || ingredient.name) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Ingredient Details</CardTitle>
@@ -376,9 +470,10 @@ export default function EditIngredientPage() {
                             step="0.01"
                             min="0"
                             required
-                            value={ingredient.cost || "none"}
+                            value={ingredient.cost ?? ""}
                             onChange={handleChange}
                             className="pl-7"
+                            placeholder="0.00"
                           />
                         </div>
                       </div>
@@ -392,15 +487,22 @@ export default function EditIngredientPage() {
                           id="minimumStock"
                           name="minimumStock"
                           type="number"
-                          step="0.01"
+                          step="any"
                           min="0"
                           required
-                          value={ingredient.minimumStock || "none"}
+                          value={ingredient.minimumStock ?? ""}
                           onChange={handleChange}
+                          placeholder="0.00"
                         />
                         <p className="text-sm text-gray-500">
                           Low stock alert will be triggered below this level
                         </p>
+                        {parseFloat(String(ingredient.minimumStock)) >
+                          parseFloat(String(ingredient.idealStock)) && (
+                          <p className="text-sm text-red-500">
+                            Minimum cannot be greater than Ideal
+                          </p>
+                        )}
                       </div>
 
                       {/* Ideal Stock */}
@@ -412,11 +514,12 @@ export default function EditIngredientPage() {
                           id="idealStock"
                           name="idealStock"
                           type="number"
-                          step="0.01"
+                          step="any"
                           min="0"
                           required
-                          value={ingredient.idealStock || "none"}
+                          value={ingredient.idealStock ?? ""}
                           onChange={handleChange}
+                          placeholder="0.00"
                         />
                       </div>
 
@@ -424,7 +527,7 @@ export default function EditIngredientPage() {
                       <div className="space-y-2">
                         <Label htmlFor="supplierId">Supplier</Label>
                         <Select
-                          value={ingredient.supplierId?.toString() || "none"}
+                          value={ingredient.supplierId?.toString() ?? "none"}
                           onValueChange={handleSupplierChange}
                         >
                           <SelectTrigger id="supplierId">
@@ -452,14 +555,18 @@ export default function EditIngredientPage() {
                         id="description"
                         name="description"
                         rows={3}
-                        value={ingredient.description || "none"}
+                        value={ingredient.description ?? ""}
                         onChange={handleChange}
+                        placeholder="Optional description"
                       />
                     </div>
 
                     {/* Form Actions */}
                     <div className="flex space-x-4 pt-4">
-                      <Button type="submit" disabled={saving}>
+                      <Button
+                        type="submit"
+                        disabled={saving || loading || !isFormValid()}
+                      >
                         {saving ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -469,14 +576,14 @@ export default function EditIngredientPage() {
                           "Save Changes"
                         )}
                       </Button>
-                      {/* <Button variant="outline" asChild>
+                      <Button variant="outline" asChild type="button">
                         <Link href={`/ingredients`}>Cancel</Link>
-                      </Button> */}
+                      </Button>
                     </div>
                   </form>
                 </CardContent>
               </Card>
-            ) : null}
+            )}
           </>
         )}
       </div>

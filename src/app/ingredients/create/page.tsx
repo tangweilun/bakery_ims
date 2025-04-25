@@ -24,7 +24,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Loader2, ArrowLeft } from "lucide-react";
 
 type Supplier = {
@@ -49,17 +48,33 @@ export default function AddIngredientForm() {
     cost: "0",
     supplierId: "",
     location: "",
-    expiryDate: null as Date | null,
   });
 
   const isFormValid = () => {
-    return (
+    // Parse numbers for validation
+    const cost = parseFloat(formData.cost);
+    const currentStock = parseFloat(formData.currentStock);
+    const minimumStock = parseFloat(formData.minimumStock);
+    const idealStock = parseFloat(formData.idealStock);
+
+    // Basic validation
+    const basicValidation =
       formData.name.trim() !== "" &&
       formData.category.trim() !== "" &&
       formData.unit.trim() !== "" &&
-      parseFloat(formData.cost) > 0 &&
-      parseFloat(formData.currentStock) >= 0
-    );
+      !isNaN(cost) &&
+      cost > 0 &&
+      !isNaN(currentStock) &&
+      currentStock >= 0 &&
+      !isNaN(minimumStock) &&
+      minimumStock >= 0 &&
+      !isNaN(idealStock) &&
+      idealStock >= 0;
+
+    // Stock level validation
+    const stockLevelValidation = minimumStock <= idealStock;
+
+    return basicValidation && stockLevelValidation;
   };
 
   useEffect(() => {
@@ -111,10 +126,6 @@ export default function AddIngredientForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (date: Date | null) => {
-    setFormData((prev) => ({ ...prev, expiryDate: date }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -127,17 +138,41 @@ export default function AddIngredientForm() {
         return;
       }
 
-      // Format the date properly if it exists
+      // --- VALIDATION ---
+      const minStock = parseFloat(formData.minimumStock);
+      const idealStock = parseFloat(formData.idealStock);
+
+      if (
+        isNaN(minStock) ||
+        minStock < 0 ||
+        isNaN(idealStock) ||
+        idealStock < 0
+      ) {
+        toast.error(
+          "Minimum and Ideal stock levels must be valid positive numbers."
+        );
+        setIsLoading(false);
+        return; // Stop if conversion failed or numbers are negative
+      }
+
+      // Check if minimumStock > idealStock
+      if (minStock > idealStock) {
+        toast.error(
+          "Minimum Stock level cannot be greater than Ideal Stock level."
+        );
+        setIsLoading(false); // Stop loading state
+        return; // Stop submission
+      }
+      // --- END VALIDATION ---
+
+      // Format the data for submission
       const formattedData = {
         ...formData,
         supplierId: formData.supplierId ? parseInt(formData.supplierId) : null,
-        currentStock: 0.0,
-        minimumStock: parseFloat(formData.minimumStock),
-        idealStock: parseFloat(formData.idealStock),
+        currentStock: 0.0, // Keep as 0.0 for new ingredients
+        minimumStock: minStock, // Use parsed value
+        idealStock: idealStock, // Use parsed value
         cost: parseFloat(formData.cost),
-        expiryDate: formData.expiryDate
-          ? formData.expiryDate.toISOString()
-          : null,
       };
 
       const response = await fetch("/api/ingredients", {
@@ -168,7 +203,6 @@ export default function AddIngredientForm() {
         cost: "0",
         supplierId: "",
         location: "",
-        expiryDate: null,
       });
 
       // Redirect to ingredients list
@@ -298,22 +332,22 @@ export default function AddIngredientForm() {
                   </div>
                 </div>
 
-                {/* <div className="space-y-2">
-                  <Label htmlFor="currentStock">
-                    Current Stock <span className="text-red-500">*</span>
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="currentStock">Current Stock</Label>
                   <Input
                     id="currentStock"
                     name="currentStock"
                     type="number"
-                    value={formData.currentStock}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.01"
+                    value="0"
+                    readOnly
+                    className="bg-gray-100"
                     placeholder="0.00"
-                    required
                   />
-                </div> */}
+                  <p className="text-sm text-gray-500">
+                    Initial stock is set to 0. Manage stock levels via Batch
+                    Tracking.
+                  </p>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="minimumStock">Minimum Stock Level</Label>
@@ -327,6 +361,14 @@ export default function AddIngredientForm() {
                     step="0.01"
                     placeholder="0.00"
                   />
+                  {parseFloat(formData.minimumStock) >
+                    parseFloat(formData.idealStock) &&
+                    !isNaN(parseFloat(formData.minimumStock)) &&
+                    !isNaN(parseFloat(formData.idealStock)) && (
+                      <p className="text-sm text-red-500 pt-1">
+                        Minimum cannot be greater than Ideal
+                      </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -398,17 +440,6 @@ export default function AddIngredientForm() {
                     value={formData.location}
                     onChange={handleChange}
                     placeholder="Enter storage location"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="expiryDate">
-                    Expiry Date (if applicable)
-                  </Label>
-                  <DatePicker
-                    date={formData.expiryDate}
-                    setDate={handleDateChange}
-                    className="w-full"
                   />
                 </div>
               </div>
