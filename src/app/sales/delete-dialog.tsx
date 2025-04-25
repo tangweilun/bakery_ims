@@ -60,9 +60,6 @@ export function DeleteSaleDialog({ sale, onDelete }: DeleteSaleDialogProps) {
         </p>
       </div>
       <DialogFooter>
-        <Button variant="outline" type="button">
-          Cancel
-        </Button>
         <Button variant="destructive" onClick={() => onDelete(sale.id)}>
           Delete Sale
         </Button>

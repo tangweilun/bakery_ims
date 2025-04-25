@@ -209,9 +209,6 @@ export function EditSaleDialog({ sale, recipes, onSave }: EditSaleDialogProps) {
       </div>
 
       <DialogFooter>
-        <Button variant="outline" type="button">
-          Cancel
-        </Button>
         <Button
           onClick={handleSave}
           disabled={editedSale.saleItems.length === 0}
