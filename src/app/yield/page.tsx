@@ -160,10 +160,37 @@ export default function YieldManagementPage() {
     }
   };
 
+  // Add a new state for tracking input errors
+  const [wasteInputErrors, setWasteInputErrors] = useState<Record<number, string>>({});
+  
   // Handle waste input change
   const handleWasteChange = (id: number, value: string) => {
+    // Clear error for this ingredient
+    setWasteInputErrors(prev => ({ ...prev, [id]: '' }));
+    
+    // First check if the value is empty, allow it to be empty for UX
+    if (value === '') {
+      setIngredients((prevIngredients) =>
+        prevIngredients.map((ing) =>
+          ing.id === id ? { ...ing, wasted: 0 } : ing
+        )
+      );
+      return;
+    }
+    
+    // Convert to number and validate
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return;
+    
+    // Check if it's a valid number and not negative
+    if (isNaN(numValue)) {
+      setWasteInputErrors(prev => ({ ...prev, [id]: 'Please enter a valid number' }));
+      return; // Reject the input
+    }
+    
+    if (numValue < 0) {
+      setWasteInputErrors(prev => ({ ...prev, [id]: 'Value cannot be negative' }));
+      return; // Reject the input
+    }
 
     setIngredients((prevIngredients) =>
       prevIngredients.map((ing) =>
@@ -344,16 +371,27 @@ export default function YieldManagementPage() {
                             {ingredient.requiredQuantity} {ingredient.unit}
                           </td>
                           <td className="py-3">
-                            <input
-                              type="number"
-                              className="border rounded p-1 w-20"
-                              value={ingredient.wasted}
-                              onChange={(e) =>
-                                handleWasteChange(ingredient.id, e.target.value)
-                              }
-                              min="0"
-                              step="0.01"
-                            />
+                            <div className="flex flex-col">
+                              <input
+                                type="number"
+                                className={`border rounded p-1 w-20 ${wasteInputErrors[ingredient.id] ? 'border-red-500' : ''}`}
+                                value={ingredient.wasted}
+                                onChange={(e) =>
+                                  handleWasteChange(ingredient.id, e.target.value)
+                                }
+                                onKeyDown={(e) => {
+                                  // Prevent the minus sign from being entered
+                                  if (e.key === '-' || e.key === 'e') {
+                                    e.preventDefault();
+                                  }
+                                }}
+                                min="0"
+                                step="0.01"
+                              />
+                              {wasteInputErrors[ingredient.id] && (
+                                <span className="text-red-500 text-xs mt-1">{wasteInputErrors[ingredient.id]}</span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3">{ingredient.unit}</td>
                         </tr>
