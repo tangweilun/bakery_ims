@@ -1,7 +1,7 @@
-// app/sales/page.tsx
+// app/sales/edit-dialog.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -43,14 +44,19 @@ type Sale = {
   saleItems: SaleItem[];
 };
 
-// Add these components after the main SalesPage component
 interface EditSaleDialogProps {
   sale: Sale;
   recipes: Recipe[];
   onSave: (updatedSale: Sale) => void;
+  open?: boolean;
 }
 
-export function EditSaleDialog({ sale, recipes, onSave }: EditSaleDialogProps) {
+export function EditSaleDialog({
+  sale,
+  recipes,
+  onSave,
+  open,
+}: EditSaleDialogProps) {
   const [editedSale, setEditedSale] = useState<{
     id: number;
     datetime: string;
@@ -60,6 +66,15 @@ export function EditSaleDialog({ sale, recipes, onSave }: EditSaleDialogProps) {
     datetime: sale.datetime,
     saleItems: [...sale.saleItems],
   });
+
+  // Reset state whenever the sale prop changes or dialog reopens
+  useEffect(() => {
+    setEditedSale({
+      id: sale.id,
+      datetime: sale.datetime,
+      saleItems: JSON.parse(JSON.stringify(sale.saleItems)), // Deep copy to avoid reference issues
+    });
+  }, [sale, open]);
 
   const addSaleItem = () => {
     if (recipes.length === 0) return;
