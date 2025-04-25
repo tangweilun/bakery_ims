@@ -114,7 +114,7 @@ export default function SalesPage() {
       setIsLoading(true);
       try {
         // Fetch sales
-        const salesResponse = await fetch("/api/sales", { cache: "no-store" });
+        const salesResponse = await fetch("/api/sales");
         if (!salesResponse.ok) {
           console.error("Sales API error:", salesResponse.status);
           setSales([]);
