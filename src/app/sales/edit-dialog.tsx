@@ -1,4 +1,4 @@
-// app/sales/page.tsx
+// app/sales/edit-dialog.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -43,7 +44,6 @@ type Sale = {
   saleItems: SaleItem[];
 };
 
-// Add these components after the main SalesPage component
 interface EditSaleDialogProps {
   sale: Sale;
   recipes: Recipe[];
@@ -209,9 +209,11 @@ export function EditSaleDialog({ sale, recipes, onSave }: EditSaleDialogProps) {
       </div>
 
       <DialogFooter>
-        <Button variant="outline" type="button">
-          Cancel
-        </Button>
+        <DialogClose asChild>
+          <Button variant="outline" type="button">
+            Cancel
+          </Button>
+        </DialogClose>
         <Button
           onClick={handleSave}
           disabled={editedSale.saleItems.length === 0}

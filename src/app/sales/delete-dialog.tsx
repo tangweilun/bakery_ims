@@ -1,11 +1,13 @@
-// app/sales/page.tsx
+// app/sales/delete-dialog.tsx
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 
@@ -37,6 +39,10 @@ interface DeleteSaleDialogProps {
 }
 
 export function DeleteSaleDialog({ sale, onDelete }: DeleteSaleDialogProps) {
+  const handleDelete = () => {
+    onDelete(sale.id);
+  };
+
   return (
     <DialogContent>
       <DialogHeader>
@@ -60,10 +66,12 @@ export function DeleteSaleDialog({ sale, onDelete }: DeleteSaleDialogProps) {
         </p>
       </div>
       <DialogFooter>
-        <Button variant="outline" type="button">
-          Cancel
-        </Button>
-        <Button variant="destructive" onClick={() => onDelete(sale.id)}>
+        <DialogClose asChild>
+          <Button variant="outline" type="button">
+            Cancel
+          </Button>
+        </DialogClose>
+        <Button variant="destructive" onClick={handleDelete}>
           Delete Sale
         </Button>
       </DialogFooter>
