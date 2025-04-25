@@ -48,9 +48,15 @@ interface EditSaleDialogProps {
   sale: Sale;
   recipes: Recipe[];
   onSave: (updatedSale: Sale) => void;
+  open?: boolean;
 }
 
-export function EditSaleDialog({ sale, recipes, onSave }: EditSaleDialogProps) {
+export function EditSaleDialog({
+  sale,
+  recipes,
+  onSave,
+  open,
+}: EditSaleDialogProps) {
   const [editedSale, setEditedSale] = useState<{
     id: number;
     datetime: string;
@@ -66,9 +72,9 @@ export function EditSaleDialog({ sale, recipes, onSave }: EditSaleDialogProps) {
     setEditedSale({
       id: sale.id,
       datetime: sale.datetime,
-      saleItems: [...sale.saleItems],
+      saleItems: JSON.parse(JSON.stringify(sale.saleItems)), // Deep copy to avoid reference issues
     });
-  }, [sale]);
+  }, [sale, open]);
 
   const addSaleItem = () => {
     if (recipes.length === 0) return;

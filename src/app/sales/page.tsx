@@ -80,6 +80,7 @@ export default function SalesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Filter states
   const [dateFilter, setDateFilter] = useState<{
@@ -767,7 +768,10 @@ export default function SalesPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Dialog>
+                              <Dialog
+                                open={editDialogOpen}
+                                onOpenChange={setEditDialogOpen}
+                              >
                                 <DialogTrigger asChild>
                                   <Button variant="outline" size="sm">
                                     Edit
@@ -777,6 +781,7 @@ export default function SalesPage() {
                                   sale={sale}
                                   recipes={recipes}
                                   onSave={handleUpdateSale}
+                                  open={editDialogOpen}
                                 />
                               </Dialog>
 
