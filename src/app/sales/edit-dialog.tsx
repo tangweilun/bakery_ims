@@ -1,7 +1,7 @@
 // app/sales/edit-dialog.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +60,15 @@ export function EditSaleDialog({ sale, recipes, onSave }: EditSaleDialogProps) {
     datetime: sale.datetime,
     saleItems: [...sale.saleItems],
   });
+
+  // Reset state whenever the sale prop changes or dialog reopens
+  useEffect(() => {
+    setEditedSale({
+      id: sale.id,
+      datetime: sale.datetime,
+      saleItems: [...sale.saleItems],
+    });
+  }, [sale]);
 
   const addSaleItem = () => {
     if (recipes.length === 0) return;
