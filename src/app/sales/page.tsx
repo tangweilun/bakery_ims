@@ -98,11 +98,9 @@ export default function SalesPage() {
 
   const [newSale, setNewSale] = useState<{
     datetime: string;
-    userId: string;
     saleItems: SaleItem[];
   }>({
     datetime: new Date().toISOString(),
-    userId: "", // TODO: Get current user's ID
     saleItems: [],
   });
 
@@ -262,7 +260,6 @@ export default function SalesPage() {
         // Reset form
         setNewSale({
           datetime: new Date().toISOString(),
-          userId: "",
           saleItems: [],
         });
         setOpen(false);

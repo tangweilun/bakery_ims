@@ -149,9 +149,10 @@ export function IngredientRequirementsChart({
           <div className="text-sm text-blue-700">
             <p className="font-medium mb-1">About This Forecast</p>
             <p>
-              This chart shows the ingredient requirements based on the forecasted sales for the next 7 days.
-              The required amounts are calculated by multiplying the recipe&apos;s ingredient quantities by the 
-              total predicted sales volume for the upcoming week.
+              This chart shows the ingredient requirements based on the
+              forecasted sales for the next 7 days. The required amounts are
+              calculated by multiplying the recipe&apos;s ingredient quantities
+              by the total predicted sales volume for the upcoming week.
             </p>
           </div>
         </div>
@@ -171,9 +172,9 @@ export function IngredientRequirementsChart({
             {lowStockIngredients.map((item) => (
               <li key={item.id} className="text-sm text-amber-700">
                 <span className="font-medium">{item.name}</span>:{" "}
-                {item.currentStock} {item.unit} available,{" "}
-                {item.requiredAmount} {item.unit} required (
-                {Math.round((item.requiredAmount - item.currentStock) * 100) / 100}{" "}
+                {Number(item.currentStock).toFixed(2)} {item.unit} available,{" "}
+                {Number(item.requiredAmount).toFixed(2)} {item.unit} required (
+                {(item.requiredAmount - item.currentStock).toFixed(2)}{" "}
                 {item.unit} shortage)
               </li>
             ))}

@@ -38,7 +38,7 @@ interface Forecast {
   Recipe: {
     name: string;
   } | null;
-  recipeName?: string; // Add the recipeName field
+  recipeName?: string;
   startDate: string;
   endDate: string;
   forecastQuantity: number;
@@ -105,9 +105,13 @@ export default function SavedForecastsPage() {
         throw new Error(errorData.error || "Failed to delete forecast");
       }
 
+      // Update the local state directly by filtering out the deleted forecast
+      setForecasts((prevForecasts) =>
+        prevForecasts.filter((forecast) => forecast.id !== forecastToDelete)
+      );
+
       toast.success("Forecast deleted successfully");
       closeDeleteDialog();
-      fetchForecasts();
     } catch (err) {
       console.error(err);
       toast.error(
