@@ -172,9 +172,14 @@ export function IngredientRequirementsChart({
             {lowStockIngredients.map((item) => (
               <li key={item.id} className="text-sm text-amber-700">
                 <span className="font-medium">{item.name}</span>:{" "}
-                {Number(item.currentStock).toFixed(2)} {item.unit} available,{" "}
-                {Number(item.requiredAmount).toFixed(2)} {item.unit} required (
-                {(item.requiredAmount - item.currentStock).toFixed(2)}{" "}
+                {Math.abs(item.currentStock) < 0.00001
+                  ? "0.00"
+                  : Number(item.currentStock).toFixed(2)}{" "}
+                {item.unit} available, {Number(item.requiredAmount).toFixed(2)}{" "}
+                {item.unit} required (
+                {(item.requiredAmount - Math.max(0, item.currentStock)).toFixed(
+                  2
+                )}{" "}
                 {item.unit} shortage)
               </li>
             ))}
