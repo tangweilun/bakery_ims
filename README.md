@@ -1,10 +1,5 @@
-# Bakery Management System
+# BakeryTrack
 
-<<<<<<< HEAD
-A comprehensive web application for bakery inventory management, production planning, sales tracking, and demand forecasting.
-
-## Overview
-=======
 <div align="center">
   <img src="https://github.com/user-attachments/assets/a76b9649-711c-410a-9a70-01184ac8b011" alt="BakeryTrack Logo" width="150"/>
   
@@ -17,91 +12,38 @@ BakeryTrack is a comprehensive web application designed to streamline bakery ope
 
 ## Screenshots
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/d291ad6e-31f8-4b42-a040-bd48de8ac4ad" alt="Dashboard" width="600"/>
-  <p><em>Dashboard Overview</em></p>
-  
-  <img src="https://github.com/user-attachments/assets/46eea5b8-23d2-48e8-8e7c-3a3966b4a32b" alt="Ingredient Management" width="600"/>
-  <p><em>Ingredient Management</em></p>
-  
-  <img src="https://github.com/user-attachments/assets/3aeb9507-04ff-4ee8-a7de-dd0698135c93" alt="Recipe Management" width="600"/>
-  <p><em>Recipe Management</em></p>
-  
-  <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
-    <img src="https://github.com/user-attachments/assets/2c933df3-0175-46e1-9020-6adf85bff37f" alt="Batch Tracking" width="290"/>
-    <img src="https://github.com/user-attachments/assets/ac161641-b497-4da7-90e5-e5d9e2eb92b4" alt="Sales Analytics" width="290"/>
-    <img src="https://github.com/user-attachments/assets/fad25d90-aa86-4ff9-8e9c-40f872fa0cb5" alt="Demand Forecasting" width="290"/>
-  </div>
-</div>
->>>>>>> 36bf19886ec7d7a198129c3a55847363606d3a20
+![image](https://github.com/user-attachments/assets/8f1b99c7-ee0d-421a-9beb-88f64b786de0)
+![image](https://github.com/user-attachments/assets/4c504b08-ce18-4816-a1c1-c2929d5e7f4e)
+![image](https://github.com/user-attachments/assets/4b2bfe92-46d7-4991-8d57-d7efd1295b99)
+![image](https://github.com/user-attachments/assets/27395de3-2558-420d-a207-c0e702edb4b7)
+![image](https://github.com/user-attachments/assets/6d3e43cd-f116-42ae-afe6-915a81364b02)
+![image](https://github.com/user-attachments/assets/322321a3-e2f1-4eb2-910b-24be8b6c6e87)
+![image](https://github.com/user-attachments/assets/c29106d6-7730-4702-b8f2-2e04bedc11a1)
+![image](https://github.com/user-attachments/assets/22c0cc1d-cc18-43c5-812a-b5b77ad91c78)
+![image](https://github.com/user-attachments/assets/4358158c-5a3b-4228-89ad-7b1f0edb1856)
+![image](https://github.com/user-attachments/assets/81ba5571-0618-4c03-b021-7855a8bd2852)
+![image](https://github.com/user-attachments/assets/48ee9511-75ff-46da-b63f-5e8f670f754f)
+![image](https://github.com/user-attachments/assets/21bfcbbb-c35e-499b-b194-0103a6bcf24a)
+![image](https://github.com/user-attachments/assets/8334c569-9ff5-45cb-a284-a29a392ec848)
+![image](https://github.com/user-attachments/assets/f36e8ae5-0b31-476a-a8fb-aa5de8083f00)
+![image](https://github.com/user-attachments/assets/0ae7477c-6641-40db-a1fe-24e9dc163379)
+![image](https://github.com/user-attachments/assets/74200231-b1a0-476f-8430-6e8696c4d929)
+![image](https://github.com/user-attachments/assets/09b1156c-aa78-4ec8-9d94-3f25122d4aa3)
+![image](https://github.com/user-attachments/assets/c596ab09-1c41-4f59-8602-2c10702b9541)
 
-This Bakery Management System is designed to help bakery businesses efficiently manage their ingredients, recipes, production, and sales. It includes features for inventory tracking, demand forecasting, recipe management, and analytics dashboards to optimize operations and reduce waste.
+## Table of Contents
 
-<<<<<<< HEAD
-## Features
-=======
 - [Key Features](#key-features)
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-  - [Database Setup](#database-setup)
-  - [Running the Application](#running-the-application)
+  - [Environment Setup](#environment-setup)
+  - [Development](#development)
 - [Project Structure](#project-structure)
->>>>>>> 36bf19886ec7d7a198129c3a55847363606d3a20
 
-- **Ingredient Management**
+## Key Features
 
-<<<<<<< HEAD
-  - Track inventory levels, costs, and suppliers
-  - Set minimum stock thresholds for automatic alerts
-  - Monitor ingredient expiration dates
-
-- **Recipe Management**
-
-  - Create and manage recipes with ingredient quantities
-  - Calculate production costs and selling prices
-  - Track recipe yields and preparation times
-
-- **Production Planning**
-
-  - Record production batches and ingredient usage
-  - Plan production based on demand forecasts
-  - Monitor batch numbers and track yields
-
-- **Sales Tracking**
-
-  - Record and analyze sales data
-  - Track product performance
-  - Generate sales reports
-
-- **Demand Forecasting**
-
-  - AI-powered demand prediction using TensorFlow
-  - Historical sales data analysis
-  - Ingredient requirement planning based on forecasts
-
-- **Supplier Management**
-
-  - Maintain supplier information
-  - Track ordering history
-  - Manage supplier relationships
-
-- **Dashboard Analytics**
-  - Real-time inventory status visualization
-  - Production efficiency metrics
-  - Sales performance charts
-
-## Technologies
-
-- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: PostgreSQL
-- **Authentication**: Supabase Auth
-- **AI/ML**: TensorFlow.js for demand forecasting
-- **Charts**: Recharts, Chart.js
-- **UI Components**: Radix UI, shadcn/ui
-=======
 ### 🍞 Ingredient Management
 - Track detailed information for each ingredient (name, description, category, unit, cost)
 - Manage supplier information and link ingredients to suppliers
@@ -173,7 +115,6 @@ This Bakery Management System is designed to help bakery businesses efficiently 
 | **Deployment** | Netlify |
 
 </div>
->>>>>>> 36bf19886ec7d7a198129c3a55847363606d3a20
 
 ## Getting Started
 
@@ -183,42 +124,8 @@ This Bakery Management System is designed to help bakery businesses efficiently 
 - PostgreSQL database
 - Supabase account (for auth)
 
-### Environment Setup
+### Installation
 
-<<<<<<< HEAD
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/yourusername/bakery-web-app.git
-   cd bakery-web-app
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Create a `.env.local` file in the root directory with the following variables:
-
-   ```
-   DATABASE_URL=postgresql://username:password@localhost:5432/bakery_db
-   DIRECT_URL=postgresql://username:password@localhost:5432/bakery_db
-   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
-
-4. Initialize the database:
-
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
-
-5. Seed the database with initial data:
-   ```bash
-   npx prisma db seed
-=======
 1. **Clone the repository:**
 
    ```bash
@@ -236,39 +143,27 @@ This Bakery Management System is designed to help bakery businesses efficiently 
 
    > **Note:** Ensure you run `npm install` (or `yarn install`) to download all necessary project dependencies before proceeding.
 
-3. **Set up environment variables:**
+### Environment Setup
 
-   Create a `.env.local` file in the root directory and add the following variables:
+Create a `.env.local` file in the root directory and add the following variables:
 
-   ```env
-   # Database URLs (Prisma)
-   # Use connection pooling for serverless environments if applicable
-   DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
-   # Direct URL is needed for migrations/introspection
-   DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+```env
+# Database URLs (Prisma)
+# Use connection pooling for serverless environments if applicable
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+# Direct URL is needed for migrations/introspection
+DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 
-   # Supabase Credentials
-   NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_URL"
-   NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+# Supabase Credentials
+NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_URL"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 
-   # Optional: Supabase Service Role Key (if needed for server-side admin tasks, keep secure)
-   # SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
->>>>>>> 36bf19886ec7d7a198129c3a55847363606d3a20
-   ```
+# Optional: Supabase Service Role Key (if needed for server-side admin tasks, keep secure)
+# SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
+```
 
 ### Development
 
-<<<<<<< HEAD
-Run the development server:
-
-```bash
-npm run dev
-```
-
-Access the application at [http://localhost:3000](http://localhost:3000)
-
-### Production Build
-=======
 1. **Apply Prisma Migrations:**
 
    This command will synchronize your database schema with the `prisma/schema.prisma` file.
@@ -288,53 +183,10 @@ Access the application at [http://localhost:3000](http://localhost:3000)
    ```
 
    > _(Requires the `prisma/seed.ts` file and `ts-node` to be configured in `package.json`)_
->>>>>>> 36bf19886ec7d7a198129c3a55847363606d3a20
 
-```bash
-npm run build
-npm start
-```
+3. **Running the Application:**
 
-<<<<<<< HEAD
-## Usage
-
-1. **Authentication**: Login or sign up using the auth system
-2. **Dashboard**: View critical inventory alerts and recent activities
-3. **Ingredients**: Manage your inventory of ingredients
-4. **Recipes**: Create and manage your bakery recipes
-5. **Production**: Record production batches and ingredient usage
-6. **Sales**: Track daily sales and product performance
-7. **Forecasts**: Generate demand predictions for future planning
-8. **Suppliers**: Manage your ingredient suppliers
-
-## Database Schema
-
-The application uses a PostgreSQL database with the following main entities:
-
-- Ingredients
-- Recipes
-- Batches
-- Production Records
-- Sales
-- Users
-- Suppliers
-- Demand Forecasts
-
-## Deployment
-
-The application can be deployed on Vercel:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fbakery-web-app)
-
-Make sure to configure the environment variables in your Vercel project settings.
-
-## License
-
-[MIT](LICENSE)
-=======
-1. **For Development:**
-
-   Start the development server with hot-reloading:
+   For Development:
 
    ```bash
    npm run dev
@@ -344,25 +196,15 @@ Make sure to configure the environment variables in your Vercel project settings
 
    Open your browser and navigate to `http://localhost:3000`.
 
-2. **For Production:**
-
-   Build the application for production:
+   For Production:
 
    ```bash
    npm run build
+   npm start
    # or
    yarn build
-   ```
-
-   Then, start the production server:
-
-   ```bash
-   npm run start
-   # or
    yarn start
    ```
-
-   The application will typically be available at `http://localhost:3000`.
 
 ## Project Structure
 
@@ -400,4 +242,3 @@ bakery-ims/
   <p>Developed with ❤️ for bakeries worldwide</p>
   <p>© 2023-2025 BakeryTrack Team</p>
 </div>
->>>>>>> 36bf19886ec7d7a198129c3a55847363606d3a20
