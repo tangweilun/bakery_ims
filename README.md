@@ -1,192 +1,157 @@
-# BakeryTrack: Smart Bakery Management System
+# Bakery Management System
 
-**GitHub Repository:** [https://github.com/tangweilun/bakery_ims.git](https://github.com/tangweilun/bakery_ims.git)
-**Live Demo (Netlify):** [https://heroic-tarsier-db5266.netlify.app/](https://heroic-tarsier-db5266.netlify.app/)
+A comprehensive web application for bakery inventory management, production planning, sales tracking, and demand forecasting.
 
-A comprehensive web application designed to streamline bakery operations through efficient inventory management, production planning, sales tracking, and intelligent demand forecasting. Built with modern web technologies, BakeryTrack helps bakeries minimize waste, optimize stock levels, and improve overall efficiency.
+## Overview
 
-## Table of Contents
+This Bakery Management System is designed to help bakery businesses efficiently manage their ingredients, recipes, production, and sales. It includes features for inventory tracking, demand forecasting, recipe management, and analytics dashboards to optimize operations and reduce waste.
 
-- [Key Features](#key-features)
-- [Technology Stack](#technology-stack)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Database Setup](#database-setup)
-  - [Running the Application](#running-the-application)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+## Features
 
-## Key Features
+- **Ingredient Management**
 
-BakeryTrack offers a suite of tools tailored for bakery management:
+  - Track inventory levels, costs, and suppliers
+  - Set minimum stock thresholds for automatic alerts
+  - Monitor ingredient expiration dates
 
-- **🍞 Ingredient Management:**
+- **Recipe Management**
 
-  - Track detailed information for each ingredient (name, description, category, unit, cost).
-  - Manage supplier information and link ingredients to suppliers.
-  - Set minimum and ideal stock levels for automated alerts and optimized ordering.
-  - View current stock levels calculated from non-expired batches.
-  - Mark ingredients as active or inactive.
+  - Create and manage recipes with ingredient quantities
+  - Calculate production costs and selling prices
+  - Track recipe yields and preparation times
 
-- **📦 Batch Tracking (FIFO & Expiry):**
+- **Production Planning**
 
-  - Record incoming ingredient batches with quantity, purchase date, and expiry date.
-  - Automatically calculates remaining quantity based on usage.
-  - Supports First-In, First-Out (FIFO) logic for usage recommendations (implicitly through expiry date sorting).
-  - Dashboard highlights batches nearing expiry.
-  - View detailed usage history for each batch.
+  - Record production batches and ingredient usage
+  - Plan production based on demand forecasts
+  - Monitor batch numbers and track yields
 
-- **🍰 Recipe Management:**
+- **Sales Tracking**
 
-  - Create and manage detailed recipes, including ingredients, quantities, preparation steps, baking time, and yield.
-  - Define selling prices for finished products.
-  - Easily view ingredients required for any recipe.
+  - Record and analyze sales data
+  - Track product performance
+  - Generate sales reports
 
-- **📈 Sales Tracking & Analytics:**
+- **Demand Forecasting**
 
-  - Record sales transactions, linking sold items to specific recipes.
-  - Track sales date, time, day of the week, quantities, and total amount.
-  - Provides historical sales data crucial for forecasting.
+  - AI-powered demand prediction using TensorFlow
+  - Historical sales data analysis
+  - Ingredient requirement planning based on forecasts
 
-- **🧠 Demand Forecasting (TensorFlow.js Model):**
+- **Supplier Management**
 
-  - Predict future demand for specific recipes based on historical sales data.
-  - Utilizes a simple **Dense Neural Network** model implemented with **TensorFlow.js** for time-series prediction, trained on past sales patterns.
-  - Generates forecasts for a defined period (e.g., the next 7 days).
-  - Visualizes predicted vs. actual sales data using charts.
-  - Allows saving generated forecasts for future reference.
+  - Maintain supplier information
+  - Track ordering history
+  - Manage supplier relationships
 
-- **📊 Ingredient Requirements Calculation:**
+- **Dashboard Analytics**
+  - Real-time inventory status visualization
+  - Production efficiency metrics
+  - Sales performance charts
 
-  - Automatically calculates the total quantity of each ingredient needed based on the demand forecast for a specific recipe.
-  - Compares required amounts with current stock levels to identify potential shortages.
-  - Visualizes requirements vs. stock using charts.
+## Technologies
 
-- **📉 Yield Management & Waste Tracking:**
-
-  - Record ingredient usage during production, specifying reasons like production, spoilage, or waste.
-  - Updates ingredient batch quantities automatically.
-  - Helps identify areas of high wastage.
-
-- **🔒 User Authentication:**
-
-  - Secure user sign-up, sign-in, and password management powered by **Supabase Auth**.
-  - Handles email confirmation and password resets.
-
-- **📜 Activity Logging:**
-
-  - Records key user actions (e.g., adding ingredients, creating sales, updating batches) for audit trails.
-
-- **🖥️ Dashboard Overview:**
-  - Provides a quick summary of recent activities and ingredients nearing expiry.
-
-## Technology Stack
-
-- **Framework:** Next.js (App Router)
-- **Language:** TypeScript
-- **Database:** PostgreSQL
-- **ORM:** Prisma
-- **Authentication:** Supabase
-- **Styling:** Tailwind CSS, shadcn/ui
-- **Charting:** Chart.js, Recharts
-- **State Management:** React Hooks (useState, useEffect)
-- **Machine Learning (Forecasting):** TensorFlow.js
-- **Deployment:** Netlify (Config files present)
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL
+- **Authentication**: Supabase Auth
+- **AI/ML**: TensorFlow.js for demand forecasting
+- **Charts**: Recharts, Chart.js
+- **UI Components**: Radix UI, shadcn/ui
 
 ## Getting Started
 
-Follow these steps to set up and run the project locally.
-
 ### Prerequisites
 
-- Node.js (v18 or later recommended)
-- npm or yarn
-- PostgreSQL Database
-- Supabase Account (for authentication and potentially database hosting)
+- Node.js 18+
+- PostgreSQL database
+- Supabase account (for auth)
 
-### Installation
+### Environment Setup
 
-1.  **Clone the repository:**
+1. Clone the repository:
 
-    ```bash
-    git clone https://github.com/tangweilun/bakery_ims.git
-    cd bakery-web-app
-    ```
+   ```bash
+   git clone https://github.com/yourusername/bakery-web-app.git
+   cd bakery-web-app
+   ```
 
-2.  **Install dependencies:**
+2. Install dependencies:
 
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
+   ```bash
+   npm install
+   ```
 
-    **Note:** Ensure you run `npm install` (or `yarn install`) to download all necessary project dependencies before proceeding.
+3. Create a `.env.local` file in the root directory with the following variables:
 
-3.  **Set up environment variables:**
-    Create a `.env.local` file in the root directory and add the following variables. Replace the placeholder values with your actual credentials.
+   ```
+   DATABASE_URL=postgresql://username:password@localhost:5432/bakery_db
+   DIRECT_URL=postgresql://username:password@localhost:5432/bakery_db
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   ```
 
-    ```env
-    # Database URLs (Prisma)
-    # Use connection pooling for serverless environments if applicable
-    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
-    # Direct URL is needed for migrations/introspection
-    DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+4. Initialize the database:
 
-    # Supabase Credentials
-    NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_URL"
-    NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
 
-    # Optional: Supabase Service Role Key (if needed for server-side admin tasks, keep secure)
-    # SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
-    ```
+5. Seed the database with initial data:
+   ```bash
+   npx prisma db seed
+   ```
 
-### Database Setup
+### Development
 
-1.  **Apply Prisma Migrations:**
-    This command will synchronize your database schema with the `prisma/schema.prisma` file.
+Run the development server:
 
-    ```bash
-    npx prisma migrate dev --name init
-    ```
+```bash
+npm run dev
+```
 
-    _(You might need a different migration name if `init` already exists)_
+Access the application at [http://localhost:3000](http://localhost:3000)
 
-2.  **(Optional) Seed the database:**
-    If you want to populate the database with initial sample data (suppliers, ingredients, recipes):
-    ```bash
-    npx prisma db seed
-    ```
-    _(Requires the `prisma/seed.ts` file and `ts-node` to be configured in `package.json`)_
+### Production Build
 
-### Running the Application
+```bash
+npm run build
+npm start
+```
 
-1.  **For Development:**
-    Start the development server with hot-reloading:
+## Usage
 
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+1. **Authentication**: Login or sign up using the auth system
+2. **Dashboard**: View critical inventory alerts and recent activities
+3. **Ingredients**: Manage your inventory of ingredients
+4. **Recipes**: Create and manage your bakery recipes
+5. **Production**: Record production batches and ingredient usage
+6. **Sales**: Track daily sales and product performance
+7. **Forecasts**: Generate demand predictions for future planning
+8. **Suppliers**: Manage your ingredient suppliers
 
-    Open your browser and navigate to `http://localhost:3000`.
+## Database Schema
 
-2.  **For Production:**
-    Build the application for production:
-    ```bash
-    npm run build
-    # or
-    yarn build
-    ```
-    Then, start the production server:
-    ```bash
-    npm run start
-    # or
-    yarn start
-    ```
-    The application will typically be available at `http://localhost:3000` (or the port configured for production).
+The application uses a PostgreSQL database with the following main entities:
 
-## Project Structure
+- Ingredients
+- Recipes
+- Batches
+- Production Records
+- Sales
+- Users
+- Suppliers
+- Demand Forecasts
+
+## Deployment
+
+The application can be deployed on Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fbakery-web-app)
+
+Make sure to configure the environment variables in your Vercel project settings.
+
+## License
+
+[MIT](LICENSE)
